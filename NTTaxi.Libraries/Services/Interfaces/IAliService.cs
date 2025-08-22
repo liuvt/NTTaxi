@@ -11,5 +11,8 @@ namespace NTTaxi.Libraries.Services.Interfaces
 
         Task<List<PromoteAli>> GetsPromoteAli(SchemaJson _json, DateTime start, DateTime end);
         Task PostPromoteAli(SchemaJson _json, DateTime start, DateTime end);
+
+        Task<List<CancelOrder>> GetsCancelOrderAli(DateTime start, DateTime end);
+        Task PostCancelOrderAli(DateTime start, DateTime end);
     }
 }

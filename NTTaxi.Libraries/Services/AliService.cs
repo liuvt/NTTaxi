@@ -1,4 +1,5 @@
 ﻿using ClosedXML.Excel;
+using DocumentFormat.OpenXml.Wordprocessing;
 using Microsoft.Extensions.Logging;
 using NTTaxi.Libraries.GoogleSheetServers.Interfaces;
 using NTTaxi.Libraries.Models.Alis;
@@ -15,8 +16,9 @@ namespace NTTaxi.Libraries.Services
         private readonly HttpClient _client;
         private readonly CookieContainer _cookieContainer;
         private readonly string endpoint_Login = "account/login";
-        private readonly string endpoint_Order = "request/widget?";
+        private readonly string endpoint_Order = "request/widget?"; 
         private readonly string endpoint_Promote = "transaction/money?";
+        private readonly string endpoint_Switchboard = "request?"; 
         private readonly Uri _baseUri = new Uri("https://adminphuquoc2.dieuhanhtaxi.vn/");
         private readonly IAliGgSheetServer aliGgSheetServer;
         private readonly ILogger<AliService> logger;
@@ -142,7 +144,6 @@ namespace NTTaxi.Libraries.Services
             var orders = await OrderAlis(provincecode, start, end);
             return (province, orders); //return (Province: province, Orders: orders);
         }
-
 
         private async Task<List<OrderAli>> OrderAlis(string area, DateTime start, DateTime end)
         {
@@ -325,6 +326,274 @@ namespace NTTaxi.Libraries.Services
 
             return query.ToString();
         }
+        #endregion
+
+        #region Cancel Orders Ali
+        private HttpClient CreateHttpClient(SchemaJson _json)
+        {
+            var handler = new HttpClientHandler { CookieContainer = new CookieContainer() };
+            foreach (var ck in _json.CookieAli)
+                handler.CookieContainer.Add(_baseUri, new Cookie(ck.key, ck.value));
+
+            return new HttpClient(handler);
+        }
+
+        public async Task PostCancelOrderAli(DateTime start, DateTime end)
+        {
+            try
+            {
+                await aliGgSheetServer.ClearCancelOrderAliAsync(); //Xóa dữ liệu cũ
+                var cancelOrders = await GetsCancelOrderAli(start, end);
+                await aliGgSheetServer.AppendCancelOrderAliAsync(cancelOrders);
+            }
+            catch (Exception ex)
+            {
+                throw new Exception($"Lỗi khi lấy dữ liệu đơn hàng: {ex.Message}");
+            }
+        }
+
+        public async Task<List<CancelOrder>> GetsCancelOrderAli(DateTime start, DateTime end)
+        {
+            try
+            {
+                var switchboardTask = GetsCancelSwitchboard(start, end);
+                var cancelTask = GetsCancelOrder(start, end);
+
+                var switchboard = await switchboardTask;
+                var cancel = await cancelTask;
+
+                return cancel.Concat(switchboard).ToList();
+            }
+            catch (Exception ex)
+            {
+                // TODO: log exception để debug
+                return new List<CancelOrder>();
+            }
+        }
+
+        #region Switchboard Order 4,6,8 : App tổng đài không chịu nỗi và cơ chế cache không ổn định nên chạy tuần tự
+        private async Task<List<CancelOrder>> GetsCancelSwitchboard(DateTime start, DateTime end)
+        {
+            try
+            {
+                var allCancelOrders = new List<CancelOrder>();
+
+                var provinces = new (string Name, string Code)[]
+                {
+                    ("BẠC LIÊU", "64"),
+                    ("VĨNH LONG", "61"),
+                    ("CÀ MAU", "63"),
+                    ("KIÊN GIANG", "15"),
+                    ("HẬU GIANG", "62"),
+                    ("AN GIANG", "16"),
+                    ("SÓC TRĂNG", "20")
+                };
+
+                foreach (var (name, code) in provinces)
+                {
+                    var cancelOrders = await CancelSwitchboard(code, start, end);
+                    allCancelOrders.AddRange(cancelOrders);
+                    await Task.Delay(500); // cho server thở một chút, tránh spam
+                }
+
+                return allCancelOrders;
+            }
+            catch (Exception ex)
+            {
+                return new List<CancelOrder>();
+            }
+        }
+
+        private async Task<List<CancelOrder>> CancelSwitchboard(string area, DateTime start, DateTime end)
+        {
+            using var client = CreateHttpClient(JsonSerializer.Deserialize<SchemaJson>(await File.ReadAllTextAsync("AliAuthentication.json")));
+            var response = await client.GetAsync(_baseUri + endpoint_Switchboard + CancelSwitchboardQueryStringParameters(area, start, end));
+            //Console.WriteLine($"Data: {response}");
+            var cancelSwitchboards = new List<CancelOrder>();
+
+            if (!response.IsSuccessStatusCode)
+                return cancelSwitchboards;
+            var fileBytes = await response.Content.ReadAsByteArrayAsync();
+            File.WriteAllBytes("test.xlsx", fileBytes);
+            using var ms = new MemoryStream(fileBytes);
+            using var workbook = new XLWorkbook(ms);
+            var ws = workbook.Worksheet(1);
+
+            //Ingore header row
+            foreach (var row in ws.RowsUsed().Skip(1))
+            {
+                //Check null or empty row
+                if (row.Cells().All(c => string.IsNullOrWhiteSpace(c.GetString())))
+                    break;
+
+                var driveNo = row.Cell(8).GetString();
+                if (string.IsNullOrWhiteSpace(driveNo))
+                {
+                    continue;
+                }
+
+                var cancelSwitchboard = new CancelOrder
+                {
+                    ID = row.Cell(2).GetString(),
+                    CustomerPhoneNumber = row.Cell(3).GetString(),
+                    CustomerFullName = row.Cell(4).GetString(),
+                    Status = row.Cell(5).GetString(),
+                    Distance = row.Cell(6).GetString().Replace(".", ","),
+                    DriverPhoneNumber = row.Cell(7).GetString(),
+                    DriveNo = driveNo.ToUpper(),
+                    Price = row.Cell(9).GetString(),
+                    Location = row.Cell(10).GetString(),
+                    BookingTime = row.Cell(11).GetString(),
+                    Note = row.Cell(12).GetString(),
+                    Type = "TỔNG ĐÀI" // Thêm loại đơn hàng là Tổng đài
+                };
+
+                cancelSwitchboards.Add(cancelSwitchboard);
+            }
+
+            return cancelSwitchboards; //Chỉ lấy những đơn hàng hủy có mã tài
+        }
+
+        private string CancelSwitchboardQueryStringParameters(string area, DateTime startTime, DateTime endTime)
+        {
+            var query = HttpUtility.ParseQueryString(string.Empty);
+            query["province"] = area;
+            query["phone_client"] = "";
+            query["phone_driver"] = "";
+            query["request_id"] = "";
+            query["content"] = "";
+            query["taxi_code"] = "";
+            query["distance"] = "0";
+            query["agency_id"] = "0";
+            query["time_finish_request"] = "0";
+            query["agency_handle"] = "-1";
+            query["request_status[]"] = "4";
+            query["request_status[]"] = "6";
+            query["request_status[]"] = "8";
+            query["taxi_type"] = "0";
+            query["team_id"] = "0";
+            query["from-date-request"] = startTime.ToString("dd-MM-yyyy HH:mm");
+            query["to-date-request"] = endTime.ToString("dd-MM-yyyy HH:mm");
+            query["driver_online"] = "0";
+            query["status_statistic"] = "1";
+            query["export_excel"] = "1";
+
+            return query.ToString();
+        }
+        #endregion
+
+        #region App Customer Order 4,6,8 
+        private async Task<List<CancelOrder>> GetsCancelOrder(DateTime start, DateTime end)
+        {
+            try
+            {
+                var allCancelOrders = new List<CancelOrder>();
+                // Tạo các task async cho từng tỉnh
+                var tasks = new[]
+                {
+                    CancelOrderAlisWithProvince("BẠC LIÊU", "64", start, end),
+                    CancelOrderAlisWithProvince("VĨNH LONG", "61", start, end),
+                    CancelOrderAlisWithProvince("CÀ MAU", "63", start, end),
+                    CancelOrderAlisWithProvince("KIÊN GIANG", "15", start, end),
+                    CancelOrderAlisWithProvince("HẬU GIANG", "62", start, end),
+                    CancelOrderAlisWithProvince("AN GIANG", "16", start, end),
+                    CancelOrderAlisWithProvince("SÓC TRĂNG", "20", start, end)
+                };
+
+                var results = await Task.WhenAll(tasks);
+                allCancelOrders = results.SelectMany(r => r.Item2).ToList();
+                // Gọi phương thức đăng nhập
+                return allCancelOrders;
+            }
+            catch (Exception ex)
+            {
+                return new List<CancelOrder>();
+            }
+        }
+        private async Task<(string, List<CancelOrder>)> CancelOrderAlisWithProvince(string province, string provincecode, DateTime start, DateTime end)
+        {
+            var cancel = await CancelOrderAlis(provincecode, start, end);
+            return ( province, cancel);
+        }
+        private async Task<List<CancelOrder>> CancelOrderAlis(string area, DateTime start, DateTime end)
+        {
+            using var client = CreateHttpClient(JsonSerializer.Deserialize<SchemaJson>(await File.ReadAllTextAsync("AliAuthentication.json")));
+
+            var response = await client.GetAsync(_baseUri + endpoint_Order + CancelOrderQueryStringParameters(area, start, end));
+            //Console.WriteLine($"Data: {response}");
+            var cancelOrders = new List<CancelOrder>();
+
+            if (!response.IsSuccessStatusCode)
+                return cancelOrders;
+
+            var fileBytes = await response.Content.ReadAsByteArrayAsync();
+            using var ms = new MemoryStream(fileBytes);
+            using var workbook = new XLWorkbook(ms);
+            var ws = workbook.Worksheet(1);
+
+            //Ingore header row
+            foreach (var row in ws.RowsUsed().Skip(1))
+            {
+                //Check null or empty row
+                if (row.Cells().All(c => string.IsNullOrWhiteSpace(c.GetString())))
+                    break;
+
+                var driveNo = row.Cell(8).GetString();
+                if (string.IsNullOrWhiteSpace(driveNo))
+                {
+                    continue;
+                }
+
+                var cancelOrder = new CancelOrder
+                {
+                    ID = row.Cell(2).GetString(),
+                    CustomerPhoneNumber = row.Cell(3).GetString(),
+                    CustomerFullName = row.Cell(4).GetString(),
+                    Status = row.Cell(5).GetString(),
+                    Distance = row.Cell(6).GetString().Replace(".", ","),
+                    DriverPhoneNumber = row.Cell(7).GetString(),
+                    DriveNo = driveNo.ToUpper(),
+                    Price = row.Cell(9).GetString(),
+                    Location = row.Cell(10).GetString(),
+                    BookingTime = row.Cell(11).GetString(),
+                    Note = row.Cell(12).GetString(),
+                    Type = "APP KHÁCH HÀNG" // Thêm loại đơn hàng là App Khách hàng
+                };
+                cancelOrders.Add(cancelOrder);
+            }
+
+            return cancelOrders; //Chỉ lấy những đơn hàng hủy có mã tài
+        }
+
+        private string CancelOrderQueryStringParameters(string area, DateTime startTime, DateTime endTime)
+        {
+            var query = HttpUtility.ParseQueryString(string.Empty);
+            query["province"] = area;
+            query["phone_client"] = "";
+            query["phone_driver"] = "";
+            query["request_id"] = "";
+            query["content"] = "";
+            query["taxi_code"] = "";
+            query["distance"] = "0";
+            query["agency_id"] = "0";
+            query["time_finish_request"] = "0";
+            query["agency_handle"] = "-1";
+            query["widget_id"] = "48";
+            query["request_status[]"] = "4";
+            query["request_status[]"] = "6";
+            query["request_status[]"] = "8";
+            query["taxi_type"] = "0";
+            query["team_id"] = "0";
+            query["from-date-request"] = startTime.ToString("dd-MM-yyyy HH:mm");
+            query["to-date-request"] = endTime.ToString("dd-MM-yyyy HH:mm");
+            query["driver_online"] = "0";
+            query["status_statistic"] = "1";
+            query["export_excel"] = "1";
+
+            return query.ToString();
+        }
+        #endregion
+
         #endregion
     }
 }

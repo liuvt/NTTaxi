@@ -21,7 +21,9 @@ namespace NTTaxi.Libraries.GoogleSheetServers
 
         // For Sheet
         private readonly string sheetAPPKH = "APP KHÁCH HÀNG";
-        private readonly string sheetKM = "KHUYẾN MÃI";
+        private readonly string sheetKM = "KHUYẾN MÃI"; 
+        private readonly string sheetCancel = "HỦY CUỐC TỔNG ĐÀI/APP";
+
 
         public AliGgSheetServer()
         {
@@ -69,7 +71,7 @@ namespace NTTaxi.Libraries.GoogleSheetServers
                     Values = values
                 };
 
-                string range = $"{sheetAPPKH}!A2:K";
+                string range = $"{sheetAPPKH}!A2:L";
                 await sheetsService.ltvAppendSheetValuesAsync(SpreadSheetId, range, valueRange);
 
                 Console.ForegroundColor = ConsoleColor.Green;
@@ -92,7 +94,7 @@ namespace NTTaxi.Libraries.GoogleSheetServers
         {
             try
             {
-                string range = $"{sheetAPPKH}!A2:K";
+                string range = $"{sheetAPPKH}!A2:L";
                 await sheetsService.ltvClearSheetValuesAsync(SpreadSheetId, range);
 
                 Console.ForegroundColor = ConsoleColor.Green;
@@ -181,5 +183,77 @@ namespace NTTaxi.Libraries.GoogleSheetServers
             }
         }
         #endregion
+
+        #region Cancel Order Ali & Switchboard
+        //Xóa data trong Google Sheet
+        public async Task<bool> ClearCancelOrderAliAsync()
+        {
+            try
+            {
+                string range = $"{sheetCancel}!A2:M";
+                await sheetsService.ltvClearSheetValuesAsync(SpreadSheetId, range);
+
+                Console.ForegroundColor = ConsoleColor.Green;
+                Console.WriteLine($"[{DateTime.Now:yyyy-MM-dd HH:mm:ss}] [Connection GoogleSheet Success] Đã xóa thành công.");
+                Console.ResetColor();
+                return true;
+            }
+            catch (Exception ex)
+            {
+                Console.ForegroundColor = ConsoleColor.Red;
+                Console.WriteLine($"[{DateTime.Now:yyyy-MM-dd HH:mm:ss}] [Connection GoogleSheet Error] {ex.Message}");
+                Console.WriteLine(ex.StackTrace);
+                Console.ResetColor();
+                return false;
+            }
+        }
+
+        //Ghi log vào Google Sheet
+        public async Task<bool> AppendCancelOrderAliAsync(List<CancelOrder> models)
+        {
+            try
+            {
+                //Convert list models to a list of values
+                var values = models.Select(model => new List<object> {
+                    model.ID,
+                    model.CustomerPhoneNumber,
+                    model.CustomerFullName,
+                    model.Status,
+                    model.Distance,
+                    model.DriverPhoneNumber,
+                    model.DriveNo,
+                    model.Price,
+                    model.Location,
+                    model.BookingTime,
+                    model.Note,
+                    model.Type,
+                    DateTime.Now.ToString("dd/MM/yyyy")
+                }).ToList<IList<object>>();
+
+                var valueRange = new ValueRange
+                {
+                    Values = values
+                };
+
+                string range = $"{sheetCancel}!A2:M";
+                await sheetsService.ltvAppendSheetValuesAsync(SpreadSheetId, range, valueRange);
+
+                Console.ForegroundColor = ConsoleColor.Green;
+                Console.WriteLine($"[{DateTime.Now:yyyy-MM-dd HH:mm:ss}] [Connection GoogleSheet Success] Đã thêm {models.Count} bản ghi vào Google Sheet.");
+                Console.ResetColor();
+                return true;
+            }
+            catch (Exception ex)
+            {
+                Console.ForegroundColor = ConsoleColor.Red;
+                Console.WriteLine($"[{DateTime.Now:yyyy-MM-dd HH:mm:ss}] [Connection GoogleSheet Error] {ex.Message}");
+                Console.WriteLine(ex.StackTrace);
+                Console.ResetColor();
+                return false;
+            }
+        }
+
+        #endregion
+
     }
 }
