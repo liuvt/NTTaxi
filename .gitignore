@@ -8,6 +8,9 @@
 /NTTaxi/obj
 /NTTaxi/ggsheetaccount.json
 /NTTaxi/ltvggsheetaccount.json
+/NTTaxi/node_modules
+/NTTaxi/package-lock.json
+/NTTaxi/package.json
 
 /NTTaxi.Libraries/bin
 /NTTaxi.Libraries/obj

@@ -86,6 +86,29 @@ namespace NTTaxi.Libraries.GoogleSheetServers
                 return false;
             }
         }
+
+        //Xóa data trong Google Sheet
+        public async Task<bool> ClearOrderAliAsync()
+        {
+            try
+            {
+                string range = $"{sheetAPPKH}!A2:K";
+                await sheetsService.ltvClearSheetValuesAsync(SpreadSheetId, range);
+
+                Console.ForegroundColor = ConsoleColor.Green;
+                Console.WriteLine($"[{DateTime.Now:yyyy-MM-dd HH:mm:ss}] [Connection GoogleSheet Success] Đã xóa thành công.");
+                Console.ResetColor();
+                return true;
+            }
+            catch (Exception ex)
+            {
+                Console.ForegroundColor = ConsoleColor.Red;
+                Console.WriteLine($"[{DateTime.Now:yyyy-MM-dd HH:mm:ss}] [Connection GoogleSheet Error] {ex.Message}");
+                Console.WriteLine(ex.StackTrace);
+                Console.ResetColor();
+                return false;
+            }
+        }
         #endregion
 
         #region Khuyến mãi
@@ -122,6 +145,29 @@ namespace NTTaxi.Libraries.GoogleSheetServers
 
                 Console.ForegroundColor = ConsoleColor.Green;
                 Console.WriteLine($"[{DateTime.Now:yyyy-MM-dd HH:mm:ss}] [Connection GoogleSheet Success] Đã ghi {models.Count} khuyến mãi vào Google Sheet.");
+                Console.ResetColor();
+                return true;
+            }
+            catch (Exception ex)
+            {
+                Console.ForegroundColor = ConsoleColor.Red;
+                Console.WriteLine($"[{DateTime.Now:yyyy-MM-dd HH:mm:ss}] [Connection GoogleSheet Error] {ex.Message}");
+                Console.WriteLine(ex.StackTrace);
+                Console.ResetColor();
+                return false;
+            }
+        }
+
+        //Xóa data trong Google Sheet
+        public async Task<bool> ClearPromoteAliAsync()
+        {
+            try
+            {
+                string range = $"{sheetKM}!A2:N";
+                await sheetsService.ltvClearSheetValuesAsync(SpreadSheetId, range);
+
+                Console.ForegroundColor = ConsoleColor.Green;
+                Console.WriteLine($"[{DateTime.Now:yyyy-MM-dd HH:mm:ss}] [Connection GoogleSheet Success] Đã xóa thành công.");
                 Console.ResetColor();
                 return true;
             }

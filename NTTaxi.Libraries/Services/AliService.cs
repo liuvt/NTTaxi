@@ -111,9 +111,7 @@ namespace NTTaxi.Libraries.Services
                     OrderAlisWithProvince("SÓC TRĂNG", "20", start, end)
                 };
 
-                        var results = await Task.WhenAll(tasks);
-
-                var ordersByProvince = results.ToDictionary(r => r.Item1, r => r.Item2);
+                var results = await Task.WhenAll(tasks);
                 allOrders = results.SelectMany(r => r.Item2).ToList();
                 return allOrders;
             }
@@ -122,10 +120,12 @@ namespace NTTaxi.Libraries.Services
                 return new List<OrderAli>();
             }
         }
+
         public async Task PostOrderAli(SchemaJson _json, DateTime start, DateTime end)
         {
             try
             {
+                await aliGgSheetServer.ClearOrderAliAsync(); //Xóa dữ liệu cũ
                 var orders = await GetsOrderAli(_json, start, end);
                 // Post lên Google Sheet
                 await aliGgSheetServer.AppendOrderAliAsync(orders);
@@ -140,7 +140,7 @@ namespace NTTaxi.Libraries.Services
         private async Task<(string, List<OrderAli>)> OrderAlisWithProvince(string province, string provincecode, DateTime start, DateTime end)
         {
             var orders = await OrderAlis(provincecode, start, end);
-            return (province, orders);
+            return (province, orders); //return (Province: province, Orders: orders);
         }
 
 
@@ -213,64 +213,61 @@ namespace NTTaxi.Libraries.Services
         #endregion
 
         #region Promotes Ali
-        public async Task<bool> GetsPromoteAli()
+        public async Task<List<PromoteAli>> GetsPromoteAli(SchemaJson _json, DateTime start, DateTime end)
         {
             try
             {
-                logger.LogInformation("Đang lấy dữ liệu khuyến mãi...");
-                if (File.Exists("AliAuthentication.json"))
+                var allPromoteAli = new List<PromoteAli>();
+                foreach (var ck in _json.CookieAli)
+                    _cookieContainer.Add(_baseUri, new Cookie(ck.key, ck.value));
+
+                // Tạo các task async cho từng tỉnh
+                var tasks = new[]
                 {
-                    var schemaJson = JsonSerializer.Deserialize<SchemaJson>(File.ReadAllText("AliAuthentication.json"));
-                    foreach (var ck in schemaJson.CookieAli)
-                    {
-                        _cookieContainer.Add(_baseUri, new Cookie(ck.key, ck.value));
-                    }
+                    PromoteAlisWithProvince("BẠC LIÊU", "64", start, end),
+                    PromoteAlisWithProvince("VĨNH LONG", "61", start, end),
+                    PromoteAlisWithProvince("CÀ MAU", "63", start, end),
+                    PromoteAlisWithProvince("KIÊN GIANG", "15", start, end),
+                    PromoteAlisWithProvince("HẬU GIANG", "62", start, end),
+                    PromoteAlisWithProvince("AN GIANG", "16", start, end),
+                    PromoteAlisWithProvince("SÓC TRĂNG", "20", start, end)
+                };
 
-                    //Create areas data
-                    var promotesByProvince = new Dictionary<string, List<PromoteAli>>
-                    {
-                        { "BẠC LIÊU", await PromoteAlis("64") },
-                        { "VĨNH LONG", await PromoteAlis("61") },
-                        { "CÀ MAU", await PromoteAlis("63") },
-                        { "KIÊN GIANG", await PromoteAlis("15") },
-                        { "HẬU GIANG", await PromoteAlis("62") },
-                        { "AN GIANG", await PromoteAlis("16") },
-                        { "SÓC TRĂNG", await PromoteAlis("20") }
-                    };
-
-                    foreach (var kvp in promotesByProvince)
-                    {
-                        string province = kvp.Key;
-                        var promotes = kvp.Value;
-
-                        logger.LogInformation($"     === {province.ToUpper()} ===");
-                        foreach (var promote in promotes)
-                        {
-                            logger.LogInformation($"ID: {promote.ID}, " +
-                                              $"Số Tài: {promote.PartnerCode}, " +
-                                              $"Tiền khuyến mãi: {promote.PromotionPrice}, " +
-                                              $"Thời gian tạo: {promote.CreatedAt}");
-                        }
-                        logger.LogInformation($"Records: ({promotes.Count})");
-                    }
-
-                    // Post to Google Sheet
-                    var allPromotes = promotesByProvince.SelectMany(kvp => kvp.Value).ToList();
-                    await aliGgSheetServer.AppendPromoteAliAsync(allPromotes);
-                }
+                var results = await Task.WhenAll(tasks);
+                allPromoteAli = results.SelectMany(r => r.Item2).ToList();
                 // Gọi phương thức đăng nhập
-                return true;
+                return allPromoteAli;
             }
             catch (Exception ex)
             {
-                logger.LogInformation($"Lỗi khi lấy dữ liệu đơn hàng: {ex.Message}");
-                return false;
+                throw new Exception($"Lỗi khi lấy dữ liệu khuyến mãi: {ex.Message}");
             }
         }
 
-        private async Task<List<PromoteAli>> PromoteAlis(string area)
+        public async Task PostPromoteAli(SchemaJson _json, DateTime start, DateTime end)
         {
-            var response = await _client.GetAsync(_baseUri + endpoint_Promote + PromoteQueryStringParameters(area, DateTime.Now.AddDays(-1).Date.AddHours(5), DateTime.Now.Date.AddHours(5)));
+            try
+            {
+                await aliGgSheetServer.ClearPromoteAliAsync(); //Xóa dữ liệu cũ
+                var promote = await GetsPromoteAli(_json, start, end);
+                // Post lên Google Sheet
+                await aliGgSheetServer.AppendPromoteAliAsync(promote);
+            }
+            catch (Exception ex)
+            {
+                throw new Exception($"Lỗi khi lấy dữ liệu khuyến mãi: {ex.Message}");
+            }
+        }
+
+        private async Task<(string, List<PromoteAli>)> PromoteAlisWithProvince(string province, string provincecode, DateTime start, DateTime end)
+        {
+            var promote = await PromoteAlis(provincecode, start, end);
+            return (Province: province, PromoteAli: promote);
+        }
+
+        private async Task<List<PromoteAli>> PromoteAlis(string area, DateTime start, DateTime end)
+        {
+            var response = await _client.GetAsync(_baseUri + endpoint_Promote + PromoteQueryStringParameters(area, start, end));
             //Console.WriteLine($"Data: {response}");
             var promotes = new List<PromoteAli>();
 

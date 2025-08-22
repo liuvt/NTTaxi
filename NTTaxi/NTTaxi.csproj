@@ -6,7 +6,7 @@
 		    <TargetFrameworks>net9.0-android;net9.0-ios;net9.0-maccatalyst</TargetFrameworks>
             <TargetFrameworks Condition="$([MSBuild]::IsOSPlatform('windows'))">$(TargetFrameworks);net9.0-windows10.0.19041.0</TargetFrameworks>
         
-		    dotnet run -\-framework net9.0-windows10.0.19041.0
+		    dotnet run framework net9.0-windows10.0.19041.0
 		-->
 		<TargetFrameworks>net9.0-windows10.0.19041.0</TargetFrameworks>
 

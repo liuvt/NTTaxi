@@ -28,18 +28,18 @@ namespace NTTaxi.Libraries.Extensions
         }
 
         /// <summary>
-        /// Xóa (clear) toàn bộ dữ liệu trong một vùng chỉ định
+        /// Xóa (clear) nội dung trong một vùng chỉ định của Google Sheets
         /// </summary>
-        public static async Task ClearSheetValuesAsync(this SheetsService service, string spreadsheetId, string range)
+        public static async Task ltvClearSheetValuesAsync(this SheetsService service, string spreadsheetId, string range)
         {
             var clearRequest = service.Spreadsheets.Values.Clear(new ClearValuesRequest(), spreadsheetId, range);
             await clearRequest.ExecuteAsync();
         }
 
         /// <summary>
-        /// Xóa 1 dòng khỏi Google Sheet theo tên sheet và index (0-based, bỏ qua dòng tiêu đề)
+        /// Xóa 1 dòng khỏi Google Sheet index (0-based, bỏ qua dòng tiêu đề)
         /// </summary>
-        public static async Task RemoveRowBySheetNameAsync(this SheetsService service, string spreadsheetId, string sheetName, int rowIndex)
+        public static async Task DeleteDimensionRequestAsync(this SheetsService service, string spreadsheetId, string sheetName, int rowIndex)
         {
             // Không xóa dòng tiêu đề
             if (rowIndex <= 0) return;
