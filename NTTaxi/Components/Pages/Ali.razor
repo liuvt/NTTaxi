@@ -1,0 +1,174 @@
+﻿@page "/ali"
+
+<div class="mt-2 w-full">
+    <div class="mt-2">
+        <div class="flex bg-gray-900 p-2 text-gray-100">
+            <div class="mb-4 text-2xl font-bold text-green-400">ALI Control Panel</div>
+        </div>
+    </div>
+    <div class="flex flex-wrap items-center gap-4 bg-gray-900 p-4 text-gray-100 ">
+        <div>
+            <label class="px-2">Tài khoản:</label>
+            <input class="rounded border border-gray-600 bg-gray-800 px-2 py-1 text-gray-100"
+                   @bind="userAli.username" />
+        </div>
+        <div>
+            <label class="px-2">Mật khẩu:</label>
+            <input type="password"
+                   class="rounded border border-gray-600 bg-gray-800 px-2 py-1 text-gray-100"
+                   @bind="userAli.password" />
+        </div>
+        <button class="rounded-xl bg-green-500 px-2 py-1 text-sm text-white hover:bg-green-600
+                   disabled:bg-gray-500 disabled:cursor-not-allowed"
+                @onclick="Login" disabled="@isLoading">
+            @(isLoading ? "Đang đăng nhập..." : "Đăng nhập")
+        </button><span class="text-teal-700">@authenStatus</span>
+    </div>
+
+    <div class="mt-2">
+        <div class="flex flex-wrap items-center gap-4 bg-gray-900 p-4 text-gray-100 ">
+            <div>
+                <label class="px-2">Bắt đầu:</label>
+                <input type="datetime"
+                       class="rounded border border-gray-600  px-2 py-1 "
+                       @bind="startDate" />
+            </div>
+            <div>
+                <label class="px-2">Kết thúc:</label>
+                <input type="datetime"
+                       class="rounded border border-gray-600  px-2 py-1 "
+                       @bind="endDate" />
+            </div>
+            <button class="rounded-xl bg-green-500 px-2 py-1 text-sm text-white hover:bg-green-600
+               disabled:bg-gray-500 disabled:cursor-not-allowed"
+                    @onclick="(() => AppendGoogleSheetAsync())" disabled="@isGetsRecording">
+                @(isGetsRecording ? "Đang lấy dữ liệu..." : "Ghi dữ liệu")
+            </button><span class="text-teal-700">@saveGGSheet</span>
+        </div>
+    </div>
+
+    @if (orders == null)
+    {
+        <p>Đang tải dữ liệu...</p>
+    }
+    else if (!orders.Any())
+    {
+        <p>Chưa có đơn hàng nào.</p>
+    }
+    else
+    {
+        <div class="my-3">
+            Tổng cuốc: (5/@orders.Count)
+            <a href="https://docs.google.com/spreadsheets/d/1rMB8_QIkPG_rJWF_4sph9YPjTqNQ7XIWfzkGWzWVM1k/edit?gid=777025477#gid=777025477"
+               target="_blank" class="underline text-blue-500 hover:text-blue-700">
+                Chi tiết
+            </a>
+        </div>
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-700 bg-gray-900 text-gray-100">
+                <thead class="bg-gray-800">
+                    <tr>
+                        <th class="px-4 py-2 text-left">ID</th>
+                        <th class="px-4 py-2 text-left">Số Tài</th>
+                        <th class="px-4 py-2 text-left">KM</th>
+                        <th class="px-4 py-2 text-left">Giá</th>
+                        <th class="px-4 py-2 text-left">Thời gian đặt</th>
+                        <th class="px-4 py-2 text-left">Trạng thái</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-700">
+                    @foreach (var order in orders.Take(5))
+                    {
+                        <tr class="hover:bg-gray-700">
+                            <td class="px-4 py-2">@order.ID</td>
+                            <td class="px-4 py-2">@order.DriveNo</td>
+                            <td class="px-4 py-2">@order.Distance</td>
+                            <td class="px-4 py-2">@order.Price</td>
+                            <td class="px-4 py-2">@order.BookingTime</td>
+                            <td class="px-4 py-2">@order.Status</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+</div>
+@code {
+    [Inject] private IAliService aliService { get; set; } = default!;
+    private bool isLoading = false;
+    private bool isGetsRecording = false;
+    private string authenStatus = "";
+    private string saveGGSheet = "";
+
+    private DateTime startDate { get; set; } = DateTime.Now.AddDays(-1).Date.AddHours(5);
+    private DateTime endDate { get; set; } = DateTime.Now.Date.AddHours(5);
+    private UserAli userAli { get; set; } = new UserAli();
+    private List<OrderAli> orders { get; set; } = new List<OrderAli>();
+    private SchemaJson schemaJson { get; set; } = new SchemaJson();
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            schemaJson = JsonSerializer.Deserialize<SchemaJson>(await File.ReadAllTextAsync("AliAuthentication.json"));
+
+            if (schemaJson != null)
+            {
+                userAli = new UserAli
+                {
+                    username = schemaJson.User.username,
+                    password = schemaJson.User.password,
+                };
+                orders = await aliService.GetsOrderAli(schemaJson, startDate, endDate); // Lấy danh sách khuyến mãi
+
+            }
+            else
+            {
+                authenStatus = "Chưa đăng nhập, vui lòng đăng nhập lại!";
+            }
+        }
+        catch (Exception ex)
+        {
+            authenStatus = $"{ex.Message}";
+        }
+    }
+
+    private async Task Login()
+    {
+        try
+        {
+            isLoading = true; // Disable button
+            bool success = await aliService.GetAuthenticationAsync(userAli);
+            authenStatus = success ? "Đăng nhập thành công, đã ghi nhớ tài khoản!" : "Tài khoản đăng nhập không đúng vui lòng nhập lại!";
+        }
+        catch (Exception ex)
+        {
+            authenStatus = "Đăng nhập thất bại, vui lòng nhập lại!";
+            Console.WriteLine(ex);
+        }
+        finally
+        {
+            isLoading = false; // Enable button sau khi xử lý xong
+        }
+    }
+
+    private async Task AppendGoogleSheetAsync()
+    {
+        try
+        {
+            isGetsRecording = true; // Disable button
+            await aliService.PostOrderAli(schemaJson, startDate, endDate);
+            orders = await aliService.GetsOrderAli(schemaJson, startDate, endDate); // Lấy danh sách khuyến mãi
+            saveGGSheet = $"Ghi dữ liệu thành công";
+        }
+        catch (Exception ex)
+        {
+            saveGGSheet = $"Lỗi: {ex.Message}";
+        }
+        finally
+        {
+            isGetsRecording = false; // Enable button sau khi xử lý xong
+        }
+    }
+
+}

@@ -1,0 +1,13 @@
+﻿################################################################################
+# This .gitignore file was automatically created by Microsoft(R) Visual Studio.
+################################################################################
+
+/.vs
+/NTTaxi/.vs
+/NTTaxi/bin
+/NTTaxi/obj
+/NTTaxi/ggsheetaccount.json
+/NTTaxi/ltvggsheetaccount.json
+
+/NTTaxi.Libraries/bin
+/NTTaxi.Libraries/obj

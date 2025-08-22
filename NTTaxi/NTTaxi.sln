@@ -1,0 +1,31 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.14.36221.1
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NTTaxi", "NTTaxi.csproj", "{4DC3DD73-1A4D-4D34-8456-71FCF61B444C}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NTTaxi.Libraries", "..\NTTaxi.Libraries\NTTaxi.Libraries.csproj", "{AED8B78B-5245-40C2-A6A5-CF662DDF7E53}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{4DC3DD73-1A4D-4D34-8456-71FCF61B444C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4DC3DD73-1A4D-4D34-8456-71FCF61B444C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4DC3DD73-1A4D-4D34-8456-71FCF61B444C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4DC3DD73-1A4D-4D34-8456-71FCF61B444C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{AED8B78B-5245-40C2-A6A5-CF662DDF7E53}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{AED8B78B-5245-40C2-A6A5-CF662DDF7E53}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{AED8B78B-5245-40C2-A6A5-CF662DDF7E53}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{AED8B78B-5245-40C2-A6A5-CF662DDF7E53}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {8DAC19C4-CFD1-42FE-B900-253A65516072}
+	EndGlobalSection
+EndGlobal

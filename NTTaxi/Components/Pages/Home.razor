@@ -1,0 +1,65 @@
+﻿@page "/"
+
+@code {
+    private bool orderRunning = false;
+    private bool promoteRunning = false;
+
+    private void ToggleOrder(bool start) => orderRunning = start;
+    private void TogglePromote(bool start) => promoteRunning = start;
+}
+
+<div class="flex min-h-screen items-center justify-center bg-gray-900 p-2 text-gray-100">
+    <div class="w-full max-w-3xl rounded-2xl bg-gray-800 p-6 shadow-lg">
+        <div class="mb-6 text-center text-2xl font-bold text-green-400">DASHBOARD</div>
+
+        <div class="grid grid-cols-1 gap-4">
+
+            <!-- Orders Service -->
+            <div class="flex items-center justify-between rounded-xl bg-gray-700 p-4 shadow">
+                <div>
+                    <h2 class="text-lg font-semibold">Orders Service</h2>
+                    <p class="text-sm text-gray-400">
+                        Đồng bộ đơn hàng lúc 06:00 -
+                        <span class="font-bold @(orderRunning ? "text-green-400" : "text-red-400")">
+                            @(orderRunning ? "Running" : "Stopped")
+                        </span>
+                    </p>
+                </div>
+                <div class="flex gap-2">
+                    <button class="rounded-lg bg-green-500 px-4 py-2 text-white hover:bg-green-600"
+                            @onclick="() => ToggleOrder(true)">
+                        Start
+                    </button>
+                    <button class="rounded-lg bg-red-500 px-4 py-2 text-white hover:bg-red-600"
+                            @onclick="() => ToggleOrder(false)">
+                        Stop
+                    </button>
+                </div>
+            </div>
+
+            <!-- Promotes Service -->
+            <div class="flex items-center justify-between rounded-xl bg-gray-700 p-4 shadow">
+                <div>
+                    <h2 class="text-lg font-semibold">Promotes Service</h2>
+                    <p class="text-sm text-gray-400">
+                        Lấy danh sách khuyến mãi -
+                        <span class="font-bold @(promoteRunning ? "text-green-400" : "text-red-400")">
+                            @(promoteRunning ? "Running" : "Stopped")
+                        </span>
+                    </p>
+                </div>
+                <div class="flex gap-2">
+                    <button class="rounded-lg bg-green-500 px-4 py-2 text-white hover:bg-green-600"
+                            @onclick="() => TogglePromote(true)">
+                        Start
+                    </button>
+                    <button class="rounded-lg bg-red-500 px-4 py-2 text-white hover:bg-red-600"
+                            @onclick="() => TogglePromote(false)">
+                        Stop
+                    </button>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
