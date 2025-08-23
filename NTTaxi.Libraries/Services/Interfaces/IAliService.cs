@@ -1,5 +1,4 @@
 ﻿using NTTaxi.Libraries.Models.Alis;
-
 namespace NTTaxi.Libraries.Services.Interfaces
 {
     public interface IAliService

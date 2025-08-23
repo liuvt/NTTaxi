@@ -3,6 +3,7 @@ using DocumentFormat.OpenXml.Wordprocessing;
 using Microsoft.Extensions.Logging;
 using NTTaxi.Libraries.GoogleSheetServers.Interfaces;
 using NTTaxi.Libraries.Models.Alis;
+using NTTaxi.Libraries.Models.Gsms;
 using NTTaxi.Libraries.Services.Interfaces;
 using System.Collections.Generic;
 using System.Net;

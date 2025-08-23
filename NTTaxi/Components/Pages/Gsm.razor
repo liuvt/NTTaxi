@@ -1,0 +1,80 @@
+﻿@page "/gsm"
+@using NTTaxi.Libraries.Models.Gsms
+
+@if (!loaded_form)
+{
+    <div class="flex min-h-screen items-center justify-center text-sm text-teal-700">@loadedForm_string</div>
+}
+else
+{
+    <div class="mt-2 w-full">
+        <div class="mt-2">
+            <div class="flex bg-gray-900 p-2 text-gray-100">
+                <div class="mb-4 text-2xl font-bold text-green-400">ALI Control Panel</div>
+            </div>
+        </div>
+        <div class="flex flex-wrap items-center gap-4 bg-gray-900 p-4 text-gray-100">
+            <div>
+                <label class="px-2">Tài khoản:</label>
+                <input class="rounded border border-gray-600 bg-gray-800 px-2 py-1 text-gray-100"
+                        />
+            </div>
+            <div>
+                <label class="px-2">Mật khẩu:</label>
+                <input type="password"
+                       class="rounded border border-gray-600 bg-gray-800 px-2 py-1 text-gray-100"
+                        />
+            </div>
+            <button class="rounded-xl bg-green-500 px-2 py-1 text-sm text-white hover:bg-green-600 disabled:cursor-not-allowed disabled:bg-gray-500"
+                    disabled="@isLoading">
+                @(isLoading ? "Đang đăng nhập..." : "Đăng nhập")
+            </button><span class="text-teal-700">@authenStatus</span>
+        </div>
+        <div class="mt-2">
+            <div class="flex flex-wrap items-center gap-4 bg-gray-900 p-4 text-gray-100">
+                <div>
+                    <label class="px-2">Bắt đầu:</label>
+                    <input type="datetime"
+                           class="rounded border border-gray-600 px-2 py-1"
+                           @bind="startDate" />
+                </div>
+                <div>
+                    <label class="px-2">Kết thúc:</label>
+                    <input type="datetime"
+                           class="rounded border border-gray-600 px-2 py-1"
+                           @bind="endDate" />
+                </div>
+                <button class="rounded-xl bg-green-500 px-2 py-1 text-sm text-white hover:bg-green-600 disabled:cursor-not-allowed disabled:bg-gray-500"
+                         disabled="@isGetsRecording">
+                    @(isGetsRecording ? "Đang lấy dữ liệu..." : "Ghi dữ liệu")
+                </button><span class="text-teal-700">@saveGGSheet</span>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    private bool isLoading = false;
+    private bool isGetsRecording = false;
+    private bool loaded_form = false;
+    private string loadedForm_string = "Đang tải...";
+    private string authenStatus = "";
+    private string saveGGSheet = "";
+
+    private DateTime startDate { get; set; } = DateTime.Now.AddDays(-1).Date.AddHours(5);
+    private DateTime endDate { get; set; } = DateTime.Now.Date.AddHours(5);
+    private UserAli userAli { get; set; } = new UserAli();
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+                loaded_form = true;
+        }
+        catch (Exception ex)
+        {
+            loaded_form = false;
+            loadedForm_string = ex.Message;
+        }
+    }
+}
