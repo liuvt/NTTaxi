@@ -2,4 +2,5 @@
 
 /*
 npx @tailwindcss/cli -i ./InputTailwindcss/input.css -o ./wwwroot/css/tailwindcss.css --watch
+dotnet run framework net9.0-windows10.0.19041.0
 */

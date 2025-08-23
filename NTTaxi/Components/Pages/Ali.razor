@@ -170,6 +170,84 @@ else
                 </table>
             </div>
         }
+
+        @if (switchBoards != null)
+        {
+            <div class="my-3">
+                Tổng cuốc tổng đài: (5/@switchBoards.Count())
+                <a href="https://docs.google.com/spreadsheets/d/1rMB8_QIkPG_rJWF_4sph9YPjTqNQ7XIWfzkGWzWVM1k/edit?gid=1491480516#gid=1491480516"
+                   target="_blank" class="text-blue-500 underline hover:text-blue-700">
+                    Chi tiết
+                </a>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-700 bg-gray-900 text-gray-100">
+                    <thead class="bg-gray-800">
+                        <tr>
+                            <th class="px-4 py-2 text-left">ID</th>
+                            <th class="px-4 py-2 text-left">Số Tài</th>
+                            <th class="px-4 py-2 text-left">KM</th>
+                            <th class="px-4 py-2 text-left">Giá</th>
+                            <th class="px-4 py-2 text-left">Thời gian đặt</th>
+                            <th class="px-4 py-2 text-left">Cuốc xe từ</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-700">
+                        @foreach (var sb in switchBoards.Take(5))
+                        {
+                            <tr class="hover:bg-gray-700">
+                                <td class="px-4 py-2">@sb.ID</td>
+                                <td class="px-4 py-2">@sb.DriveNo</td>
+                                <td class="px-4 py-2">@sb.Distance</td>
+                                <td class="px-4 py-2">@sb.Price</td>
+                                <td class="px-4 py-2">@sb.BookingTime</td>
+                                <td class="px-4 py-2">@sb.Note</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+
+        @if (partnerGSMs != null)
+        {
+            <div class="my-3">
+                Tổng cuốc đối tác GSM: (5/@partnerGSMs.Count())
+                <a href="https://docs.google.com/spreadsheets/d/1rMB8_QIkPG_rJWF_4sph9YPjTqNQ7XIWfzkGWzWVM1k/edit?gid=521893464#gid=521893464"
+                   target="_blank" class="text-blue-500 underline hover:text-blue-700">
+                    Chi tiết
+                </a>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-700 bg-gray-900 text-gray-100">
+                    <thead class="bg-gray-800">
+                        <tr>
+                            <th class="px-4 py-2 text-left">ID ĐỐI TÁC</th>
+                            <th class="px-4 py-2 text-left">ID HỆ THỐNG</th>
+                            <th class="px-4 py-2 text-left">Số tài</th>
+                            <th class="px-4 py-2 text-left">KM</th>
+                            <th class="px-4 py-2 text-left">Giá</th>
+                            <th class="px-4 py-2 text-left">Thời gian đặt</th>
+                            <th class="px-4 py-2 text-left">Cuốc xe từ</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-700">
+                        @foreach (var partner in partnerGSMs.Take(5))
+                        {
+                            <tr class="hover:bg-gray-700">
+                                <td class="px-4 py-2">@partner.Id_partner</td>
+                                <td class="px-4 py-2">@partner.Id_ali</td>
+                                <td class="px-4 py-2">@partner.DriveNo</td>
+                                <td class="px-4 py-2">@partner.Distance</td>
+                                <td class="px-4 py-2">@partner.Price</td>
+                                <td class="px-4 py-2">@partner.TripTime</td>
+                                <td class="px-4 py-2">@partner.PickupLocation</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
     </div>
 }
 
@@ -188,6 +266,8 @@ else
     private List<OrderAli> orders { get; set; } = new List<OrderAli>();
     private List<PromoteAli> promotes { get; set; } = new List<PromoteAli>();
     private List<CancelOrder> cancelOrders { get; set; } = new List<CancelOrder>();
+    private List<SwitchboardAli> switchBoards { get; set; } = new List<SwitchboardAli>();
+    private List<PartnerGSM> partnerGSMs { get; set; } = new List<PartnerGSM>();
     private SchemaJson schemaJson { get; set; } = new SchemaJson();
 
     protected override async Task OnInitializedAsync()
@@ -206,7 +286,9 @@ else
 
                 orders = await aliService.GetsOrderAli(schemaJson, startDate, endDate);
                 promotes = await aliService.GetsPromoteAli(schemaJson, startDate, endDate);
-                cancelOrders = await aliService.GetsCancelOrderAli(startDate, endDate); //Hiển thị cho client
+                //cancelOrders = await aliService.GetsCancelOrderAli(startDate, endDate); //Hiển thị cho client
+                //switchBoards = await aliService.GetsSwitchboardAli(startDate, endDate);
+                partnerGSMs = await aliService.GetsPartnerGSMAli(startDate, endDate);
 
                 loaded_form = true;
             }
@@ -245,14 +327,20 @@ else
         try
         {
             isGetsRecording = true; // Disable button
-            await aliService.PostOrderAli(schemaJson, startDate, endDate); //Post dữ liệu lên Google Sheet
-            orders = await aliService.GetsOrderAli(schemaJson, startDate, endDate); //Hiển thị cho client
+            await aliService.PostOrderAli(schemaJson, startDate, endDate); 
+            orders = await aliService.GetsOrderAli(schemaJson, startDate, endDate); 
 
-            await aliService.PostPromoteAli(schemaJson, startDate, endDate); //Post dữ liệu lên Google Sheet
-            promotes = await aliService.GetsPromoteAli(schemaJson, startDate, endDate); //Hiển thị cho client
+            await aliService.PostPromoteAli(schemaJson, startDate, endDate);
+            promotes = await aliService.GetsPromoteAli(schemaJson, startDate, endDate);
 
             await aliService.PostCancelOrderAli(startDate, endDate);
-            cancelOrders = await aliService.GetsCancelOrderAli( startDate, endDate); //Hiển thị cho client
+            cancelOrders = await aliService.GetsCancelOrderAli( startDate, endDate); 
+
+            await aliService.PostSwitchboardAli(startDate, endDate);
+            switchBoards = await aliService.GetsSwitchboardAli(startDate, endDate);
+
+            await aliService.PostPartnerGSMAli(startDate, endDate);
+            partnerGSMs = await aliService.GetsPartnerGSMAli(startDate, endDate);
 
             saveGGSheet = $"Ghi dữ liệu thành công";
         }
@@ -265,5 +353,4 @@ else
             isGetsRecording = false; // Enable button sau khi xử lý xong
         }
     }
-
 }

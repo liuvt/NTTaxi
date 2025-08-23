@@ -1,13 +1,5 @@
 ﻿@page "/"
 
-@code {
-    private bool orderRunning = false;
-    private bool promoteRunning = false;
-
-    private void ToggleOrder(bool start) => orderRunning = start;
-    private void TogglePromote(bool start) => promoteRunning = start;
-}
-
 <div class="flex min-h-screen items-center justify-center bg-gray-900 p-2 text-gray-100">
     <div class="w-full max-w-3xl rounded-2xl bg-gray-800 p-6 shadow-lg">
         <div class="mb-6 text-center text-2xl font-bold text-green-400">DASHBOARD</div>
@@ -17,21 +9,21 @@
             <!-- Orders Service -->
             <div class="flex items-center justify-between rounded-xl bg-gray-700 p-4 shadow">
                 <div>
-                    <h2 class="text-lg font-semibold">Orders Service</h2>
+                    <h2 class="text-lg font-semibold">ALI Control Panel</h2>
                     <p class="text-sm text-gray-400">
-                        Đồng bộ đơn hàng lúc 06:00 -
-                        <span class="font-bold @(orderRunning ? "text-green-400" : "text-red-400")">
-                            @(orderRunning ? "Running" : "Stopped")
+                        Đồng bộ lúc 05:30 - @aliActivity
+                        <span class="font-bold @(aliWorker.IsRunning ? "text-green-400" : "text-red-400")">
+                            @(aliWorker.IsRunning ? "Running" : "Stopped")
                         </span>
                     </p>
                 </div>
                 <div class="flex gap-2">
                     <button class="rounded-lg bg-green-500 px-4 py-2 text-white hover:bg-green-600"
-                            @onclick="() => ToggleOrder(true)">
+                            @onclick="AliStart">
                         Start
                     </button>
                     <button class="rounded-lg bg-red-500 px-4 py-2 text-white hover:bg-red-600"
-                            @onclick="() => ToggleOrder(false)">
+                            @onclick="AliStop">
                         Stop
                     </button>
                 </div>
@@ -40,21 +32,21 @@
             <!-- Promotes Service -->
             <div class="flex items-center justify-between rounded-xl bg-gray-700 p-4 shadow">
                 <div>
-                    <h2 class="text-lg font-semibold">Promotes Service</h2>
+                    <h2 class="text-lg font-semibold">GSM Control Panel</h2>
                     <p class="text-sm text-gray-400">
-                        Lấy danh sách khuyến mãi -
-                        <span class="font-bold @(promoteRunning ? "text-green-400" : "text-red-400")">
-                            @(promoteRunning ? "Running" : "Stopped")
+                        Đồng bộ lúc 05:30 - @gsmActivity
+                        <span class="font-bold @(gsmRunning ? "text-green-400" : "text-red-400")">
+                            @(gsmRunning ? "Running" : "Stopped")
                         </span>
                     </p>
                 </div>
                 <div class="flex gap-2">
                     <button class="rounded-lg bg-green-500 px-4 py-2 text-white hover:bg-green-600"
-                            @onclick="() => TogglePromote(true)">
+                            @onclick="() => GsmStart()">
                         Start
                     </button>
                     <button class="rounded-lg bg-red-500 px-4 py-2 text-white hover:bg-red-600"
-                            @onclick="() => TogglePromote(false)">
+                            @onclick="() => GsmStop()">
                         Stop
                     </button>
                 </div>
@@ -63,3 +55,72 @@
         </div>
     </div>
 </div>
+
+@code {
+    private bool gsmRunning = false;
+    private void ToggleGSM(bool start) => gsmRunning = start;
+
+    [Inject] private IAliWorker aliWorker { get; set; } = default!;
+    private string aliActivity = "";
+    private string gsmActivity = "";
+
+    private DateTime startDate { get; set; } = DateTime.Now.AddDays(-1).Date.AddHours(5);
+    private DateTime endDate { get; set; } = DateTime.Now.Date.AddHours(5);
+    private UserAli userAli { get; set; } = new UserAli();
+    private List<OrderAli> orders { get; set; } = new List<OrderAli>();
+    private List<PromoteAli> promotes { get; set; } = new List<PromoteAli>();
+    private List<CancelOrder> cancelOrders { get; set; } = new List<CancelOrder>();
+    private SchemaJson schemaJson { get; set; } = new SchemaJson();
+
+    private void AliStart()
+    {
+        try
+        {
+            aliWorker.Start();
+            aliActivity = $"Hoạt động!";
+        }
+        catch (Exception ex)
+        {
+            aliActivity = $"Lỗi: {ex.Message}";
+        }
+    }
+
+    private void AliStop()
+    {
+        try
+        {
+            aliWorker.Stop();
+            aliActivity = $"Dừng hoạt động!";
+        }
+        catch (Exception ex)
+        {
+            aliActivity = $"Lỗi: {ex.Message}";
+        }
+    }
+
+    private void GsmStart()
+    {
+        try
+        {
+            gsmActivity = $"Hoạt động!";
+            ToggleGSM(true);
+        }
+        catch (Exception ex)
+        {
+            gsmActivity = $"Lỗi: {ex.Message}";
+        }
+    }
+
+    private void GsmStop()
+    {
+        try
+        {
+            gsmActivity = $"Dừng hoạt động!";
+            ToggleGSM(false);
+        }
+        catch (Exception ex)
+        {
+            gsmActivity = $"Lỗi: {ex.Message}";
+        }
+    }
+}

@@ -1,8 +1,10 @@
 ﻿using Microsoft.Extensions.Logging;
-using NTTaxi.Libraries.Services;
-using NTTaxi.Libraries.Services.Interfaces;
 using NTTaxi.Libraries.GoogleSheetServers;
 using NTTaxi.Libraries.GoogleSheetServers.Interfaces;
+using NTTaxi.Libraries.Services;
+using NTTaxi.Libraries.Services.Interfaces;
+using NTTaxi.Libraries.Workers;
+using NTTaxi.Libraries.Workers.Interfaces;
 
 namespace NTTaxi
 {
@@ -20,9 +22,12 @@ namespace NTTaxi
 
             builder.Services.AddMauiBlazorWebView();
 
-            // Registering services
+            // Registering services (Dispose sau khi call)
             builder.Services.AddScoped<IAliGgSheetServer, AliGgSheetServer>();
             builder.Services.AddScoped<IAliService, AliService>();
+
+            // Registering workers (Singleton luôn sống theo ứng dụng)
+            builder.Services.AddSingleton<IAliWorker, AliWorker>();
 
 #if DEBUG
             builder.Services.AddBlazorWebViewDeveloperTools();

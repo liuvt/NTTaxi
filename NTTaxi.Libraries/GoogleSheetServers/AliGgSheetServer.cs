@@ -1,10 +1,12 @@
-﻿using NTTaxi.Libraries.Extensions;
-using NTTaxi.Libraries.Models.Alis;
-using Google.Apis.Auth.OAuth2;
+﻿using Google.Apis.Auth.OAuth2;
 using Google.Apis.Services;
 using Google.Apis.Sheets.v4;
 using Google.Apis.Sheets.v4.Data;
+using NTTaxi.Libraries.Extensions;
 using NTTaxi.Libraries.GoogleSheetServers.Interfaces;
+using NTTaxi.Libraries.Models.Alis;
+using System.IO;
+using System.Net.NetworkInformation;
 
 namespace NTTaxi.Libraries.GoogleSheetServers
 
@@ -23,6 +25,8 @@ namespace NTTaxi.Libraries.GoogleSheetServers
         private readonly string sheetAPPKH = "APP KHÁCH HÀNG";
         private readonly string sheetKM = "KHUYẾN MÃI"; 
         private readonly string sheetCancel = "HỦY CUỐC TỔNG ĐÀI/APP";
+        private readonly string sheetSwitchboard = "KIẾM SOÁT DỊCH VỤ HOÀN THÀNH";
+        private readonly string sheetPartnerGSM = "ĐÔI TÁC GSM TRÊN ALI";
 
 
         public AliGgSheetServer()
@@ -255,5 +259,147 @@ namespace NTTaxi.Libraries.GoogleSheetServers
 
         #endregion
 
+        #region Switchboard
+        //Xóa data trong Google Sheet
+        public async Task<bool> ClearSwitchboardAliAsync()
+        {
+            try
+            {
+                string range = $"{sheetSwitchboard}!A2:L";
+                await sheetsService.ltvClearSheetValuesAsync(SpreadSheetId, range);
+
+                Console.ForegroundColor = ConsoleColor.Green;
+                Console.WriteLine($"[{DateTime.Now:yyyy-MM-dd HH:mm:ss}] [Connection GoogleSheet Success] Đã xóa thành công.");
+                Console.ResetColor();
+                return true;
+            }
+            catch (Exception ex)
+            {
+                Console.ForegroundColor = ConsoleColor.Red;
+                Console.WriteLine($"[{DateTime.Now:yyyy-MM-dd HH:mm:ss}] [Connection GoogleSheet Error] {ex.Message}");
+                Console.WriteLine(ex.StackTrace);
+                Console.ResetColor();
+                return false;
+            }
+        }
+
+        //Ghi log vào Google Sheet
+        public async Task<bool> AppendSwitchboardAliAsync(List<SwitchboardAli> models)
+        {
+            try
+            {
+                //Convert list models to a list of values
+                var values = models.Select(model => new List<object> {
+                    model.ID,
+                    model.CustomerPhoneNumber,
+                    model.CustomerFullName,
+                    model.Status,
+                    model.Distance,
+                    model.DriverPhoneNumber,
+                    model.DriveNo,
+                    model.Price,
+                    model.Location,
+                    model.BookingTime,
+                    model.Note,
+                    DateTime.Now.ToString("dd/MM/yyyy")
+                }).ToList<IList<object>>();
+
+                var valueRange = new ValueRange
+                {
+                    Values = values
+                };
+
+                string range = $"{sheetSwitchboard}!A2:L";
+                await sheetsService.ltvAppendSheetValuesAsync(SpreadSheetId, range, valueRange);
+
+                Console.ForegroundColor = ConsoleColor.Green;
+                Console.WriteLine($"[{DateTime.Now:yyyy-MM-dd HH:mm:ss}] [Connection GoogleSheet Success] Đã thêm {models.Count} bản ghi vào Google Sheet.");
+                Console.ResetColor();
+                return true;
+            }
+            catch (Exception ex)
+            {
+                Console.ForegroundColor = ConsoleColor.Red;
+                Console.WriteLine($"[{DateTime.Now:yyyy-MM-dd HH:mm:ss}] [Connection GoogleSheet Error] {ex.Message}");
+                Console.WriteLine(ex.StackTrace);
+                Console.ResetColor();
+                return false;
+            }
+        }
+        #endregion
+
+        #region GSM Partner
+        //Xóa data trong Google Sheet
+        public async Task<bool> ClearPartnerGSMAliAsync()
+        {
+            try
+            {
+                string range = $"{sheetPartnerGSM}!A2:Q";
+                await sheetsService.ltvClearSheetValuesAsync(SpreadSheetId, range);
+
+                Console.ForegroundColor = ConsoleColor.Green;
+                Console.WriteLine($"[{DateTime.Now:yyyy-MM-dd HH:mm:ss}] [Connection GoogleSheet Success] Đã xóa thành công.");
+                Console.ResetColor();
+                return true;
+            }
+            catch (Exception ex)
+            {
+                Console.ForegroundColor = ConsoleColor.Red;
+                Console.WriteLine($"[{DateTime.Now:yyyy-MM-dd HH:mm:ss}] [Connection GoogleSheet Error] {ex.Message}");
+                Console.WriteLine(ex.StackTrace);
+                Console.ResetColor();
+                return false;
+            }
+        }
+
+        //Ghi log vào Google Sheet
+        public async Task<bool> AppendPartnerGSMAliAsync(List<PartnerGSM> models)
+        {
+            try
+            {
+                //Convert list models to a list of values
+                var values = models.Select(model => new List<object> {
+                    model.Id_partner,
+                    model.Id_ali,
+                    model.TripTime,
+                    model.CustomerPhoneNumber,
+                    model.CustomerFullName,
+                    model.Distance,
+                    model.Price,
+                    model.PaymentMethod,
+                    model.PaymentStatus,
+                    model.DriverPhoneNumber,
+                    model.DriverId,
+                    model.DriveNo,
+                    model.TripStatus,
+                    model.PickupLocation,
+                    model.DropoffLocation,
+                    model.TypeService,
+                    DateTime.Now.ToString("dd/MM/yyyy")
+                }).ToList<IList<object>>();
+
+                var valueRange = new ValueRange
+                {
+                    Values = values
+                };
+
+                string range = $"{sheetPartnerGSM}!A2:Q";
+                await sheetsService.ltvAppendSheetValuesAsync(SpreadSheetId, range, valueRange);
+
+                Console.ForegroundColor = ConsoleColor.Green;
+                Console.WriteLine($"[{DateTime.Now:yyyy-MM-dd HH:mm:ss}] [Connection GoogleSheet Success] Đã thêm {models.Count} bản ghi vào Google Sheet.");
+                Console.ResetColor();
+                return true;
+            }
+            catch (Exception ex)
+            {
+                Console.ForegroundColor = ConsoleColor.Red;
+                Console.WriteLine($"[{DateTime.Now:yyyy-MM-dd HH:mm:ss}] [Connection GoogleSheet Error] {ex.Message}");
+                Console.WriteLine(ex.StackTrace);
+                Console.ResetColor();
+                return false;
+            }
+        }
+        #endregion
     }
 }

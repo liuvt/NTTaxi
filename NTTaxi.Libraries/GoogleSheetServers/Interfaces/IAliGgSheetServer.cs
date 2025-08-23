@@ -14,5 +14,12 @@ namespace NTTaxi.Libraries.GoogleSheetServers.Interfaces
         Task<bool> AppendCancelOrderAliAsync(List<CancelOrder> models);
         Task<bool> ClearCancelOrderAliAsync();
 
+        //Switchboard
+        Task<bool> AppendSwitchboardAliAsync(List<SwitchboardAli> models);
+        Task<bool> ClearSwitchboardAliAsync();
+
+        //GSM Partner
+        Task<bool> AppendPartnerGSMAliAsync(List<PartnerGSM> models);
+        Task<bool> ClearPartnerGSMAliAsync();
     }
 }

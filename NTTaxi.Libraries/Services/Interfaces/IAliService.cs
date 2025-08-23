@@ -14,5 +14,12 @@ namespace NTTaxi.Libraries.Services.Interfaces
 
         Task<List<CancelOrder>> GetsCancelOrderAli(DateTime start, DateTime end);
         Task PostCancelOrderAli(DateTime start, DateTime end);
+
+        Task<List<SwitchboardAli>> GetsSwitchboardAli(DateTime start, DateTime end);
+        Task PostSwitchboardAli(DateTime start, DateTime end);
+
+        Task<List<PartnerGSM>> GetsPartnerGSMAli(DateTime start, DateTime end);
+        Task PostPartnerGSMAli(DateTime start, DateTime end);
+
     }
 }

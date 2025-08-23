@@ -11,6 +11,7 @@
 /NTTaxi/node_modules
 /NTTaxi/package-lock.json
 /NTTaxi/package.json
+/NTTaxi/tailwind.extension.json
 
 /NTTaxi.Libraries/bin
 /NTTaxi.Libraries/obj
