@@ -23,8 +23,11 @@ namespace NTTaxi
             builder.Services.AddMauiBlazorWebView();
 
             // Registering services (Dispose sau khi call)
+            // Post data to Google Sheet
             builder.Services.AddScoped<IAliGgSheetServer, AliGgSheetServer>();
+            // Get data from HTTP API
             builder.Services.AddScoped<IAliService, AliService>();
+            builder.Services.AddScoped<IVETCService, VETCService>();
 
             // Registering workers (Singleton luôn sống theo ứng dụng)
             builder.Services.AddSingleton<IAliWorker, AliWorker>();
