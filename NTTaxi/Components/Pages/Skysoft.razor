@@ -1,0 +1,38 @@
+﻿@page "/skysoft"
+<h3>Skysoft</h3>
+
+@requestTime
+
+<input type="button" value="Export" @onclick="ReportsExport" />
+<span>@rs</span>
+
+@code {
+    [Inject] private ISkysoftService skysoftService { get; set; } = default!;
+    private string rs { get; set; } = default!;
+    private long requestTime { get; set; } = default!;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            // RequestTime
+             requestTime = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+        }
+        catch (Exception ex)
+        {
+            var msg = ex.Message;
+        }
+    }
+
+    private async Task ReportsExport()
+    {
+        try
+        {
+            rs = await skysoftService.GetDatas();
+        }
+        catch (Exception ex)
+        {
+            var msg = ex.Message;
+        }
+    }
+}

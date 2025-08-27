@@ -28,6 +28,7 @@ namespace NTTaxi
             // Get data from HTTP API
             builder.Services.AddScoped<IAliService, AliService>();
             builder.Services.AddScoped<IVETCService, VETCService>();
+            builder.Services.AddScoped<ISkysoftService, SkysoftService> ();
 
             // Registering workers (Singleton luôn sống theo ứng dụng)
             builder.Services.AddSingleton<IAliWorker, AliWorker>();
