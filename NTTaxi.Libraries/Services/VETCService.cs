@@ -11,7 +11,7 @@ using System.Text.RegularExpressions;
 
 namespace NTTaxi.Libraries.Services
 {
-    public class VETCService : IVETCService
+    public class JavaLauncherService : IJavaLauncherService
     {
         private readonly HttpClient httpClient;
         private readonly CookieContainer cookieContainer;
@@ -22,8 +22,8 @@ namespace NTTaxi.Libraries.Services
         private string _verificationToken;
 
         private readonly IVetcGgSheetServer vetcGgSheetServer;
-        private readonly ILogger<VETCService> logger;
-        public VETCService(IVetcGgSheetServer _vetcGgSheetServer, ILogger<VETCService> _logger)
+        private readonly ILogger<JavaLauncherService> logger;
+        public JavaLauncherService(IVetcGgSheetServer _vetcGgSheetServer, ILogger<JavaLauncherService> _logger)
         {
             this.vetcGgSheetServer = _vetcGgSheetServer;
             this.logger = _logger;
