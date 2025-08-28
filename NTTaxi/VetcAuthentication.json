@@ -1,0 +1,27 @@
+{
+  "BLU": {
+    "Provider": "Bạc Liêu",
+    "accountid": 3213242,
+    "User": {
+      "username": "E0104577818",
+      "password": "NamThang@25"
+    }
+  },
+  "VLG": {
+    "Provider": "Vĩnh Long",
+    "accountid": 3213243,
+    "User": {
+      "username": "E0104577822",
+      "password": "Vl2025@"
+    }
+  },
+  "STG": {
+    "Provider": "Sóc Trăng",
+    "accountid": 3213256,
+    "User": {
+      "username": "E0104577807",
+      "password": "St2024@"
+    }
+  }
+}
+

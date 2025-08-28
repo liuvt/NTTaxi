@@ -25,13 +25,17 @@ namespace NTTaxi
             // Registering services (Dispose sau khi call)
             // Post data to Google Sheet
             builder.Services.AddScoped<IAliGgSheetServer, AliGgSheetServer>();
+            builder.Services.AddScoped<IVetcGgSheetServer, VetcGgSheetServer>();
             // Get data from HTTP API
             builder.Services.AddScoped<IAliService, AliService>();
             builder.Services.AddScoped<IVETCService, VETCService>();
+
+            // Testing Skysoft
             builder.Services.AddScoped<ISkysoftService, SkysoftService> ();
 
             // Registering workers (Singleton luôn sống theo ứng dụng)
             builder.Services.AddSingleton<IAliWorker, AliWorker>();
+            builder.Services.AddSingleton<IVetcWorker, VetcWorker>();
 
 #if DEBUG
             builder.Services.AddBlazorWebViewDeveloperTools();
