@@ -7,9 +7,9 @@
 	</PropertyGroup>
 
 	<ItemGroup>
-	  <Content Include="tessdata-main\eng.traineddata">
-	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-	  </Content>
+	  <Compile Remove="tessdata-main\**" />
+	  <EmbeddedResource Remove="tessdata-main\**" />
+	  <None Remove="tessdata-main\**" />
 	</ItemGroup>
 
 	<ItemGroup>
@@ -18,7 +18,6 @@
 		<PackageReference Include="Microsoft.Extensions.Logging" Version="9.0.8" />
 		<PackageReference Include="Microsoft.Extensions.Logging.Console" Version="9.0.8" />
 		<!-- data pass captcha: https://github.com/tesseract-ocr/tessdata-->
-		<PackageReference Include="Tesseract" Version="5.2.0" />
 	</ItemGroup>
 
 </Project>

@@ -2,7 +2,7 @@
 using NTTaxi.Libraries.Models.Vetcs;
 namespace NTTaxi.Libraries.Services.Interfaces
 {
-    public interface IJavaLauncherService
+    public interface IVETCService
     {
         Task<bool> GetAuthenticationAsync(UserVetc user, string provinceCode);
         Task<List<VetcItem>> GetsVetcAsync(GetsPayload payload);

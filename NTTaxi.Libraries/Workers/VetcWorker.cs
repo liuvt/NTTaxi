@@ -8,12 +8,12 @@ namespace NTTaxi.Libraries.Workers
 {
     public class VetcWorker : IVetcWorker
     {
-        private readonly IJavaLauncherService _vetcService;
+        private readonly IVETCService _vetcService;
         private CancellationTokenSource? _cts;
 
         public event Action? StatusChanged; // Sự kiện trạng thái thay đổi (đang chạy/dừng)
         public bool IsRunning => _cts != null;
-        public VetcWorker(IJavaLauncherService vetcService)
+        public VetcWorker(IVETCService vetcService)
         {
             _vetcService = vetcService;
         }

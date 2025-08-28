@@ -4,10 +4,7 @@ using Google.Apis.Sheets.v4;
 using Google.Apis.Sheets.v4.Data;
 using NTTaxi.Libraries.Extensions;
 using NTTaxi.Libraries.GoogleSheetServers.Interfaces;
-using NTTaxi.Libraries.Models.Alis;
 using NTTaxi.Libraries.Models.Vetcs;
-using System.IO;
-using System.Net.NetworkInformation;
 
 namespace NTTaxi.Libraries.GoogleSheetServers
 
