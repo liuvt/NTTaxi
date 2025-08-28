@@ -1,0 +1,16 @@
+﻿@page "/skysoft-launcher"
+<h3>Skysoft launcher</h3>
+<button class="rounded bg-blue-600 px-3 py-1 hover:bg-blue-700"
+        @onclick="OpenSkysoft">
+    Mở Skysoft
+</button>
+
+
+@code {
+    [Inject] private IJavaLauncherAutomation Launcher { get; set; } = default!;
+    private void OpenSkysoft()
+    {
+        string jnlpPath = @"D:\Dev\Skysoft\skysoft.jnlp";
+        Launcher.OpenSkysoftJnlp(jnlpPath);
+    }
+}
