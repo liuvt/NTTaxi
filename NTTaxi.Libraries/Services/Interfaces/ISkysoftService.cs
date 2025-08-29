@@ -2,6 +2,7 @@
 {
     public interface ISkysoftService
     {
-        Task<string> GetDatas();
+        Task<string> GetCookieAsync();
+        Task<string> AuthenticationAsync();
     }
 }

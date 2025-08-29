@@ -3,6 +3,7 @@ using NTTaxi.Libraries.Extensions;
 using NTTaxi.Libraries.Services.Interfaces;
 using System.IO.Compression;
 using System.Net;
+using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Text;
 
@@ -12,6 +13,7 @@ namespace NTTaxi.Libraries.Services
     {
         private readonly HttpClient httpClient;
         private readonly CookieContainer cookieContainer;
+        private readonly string _url = "https://tracking.skysoft.vn/ServletServer";
 
         public SkysoftService()
         {
@@ -24,100 +26,144 @@ namespace NTTaxi.Libraries.Services
             };
 
             httpClient = new HttpClient(handler);
-
-            // Thêm cookie
-            cookieContainer.Add(new Uri("https://tracking.skysoft.vn"),
-                    new Cookie("JSESSIONID", "s26~8516E92F772873AB1E926EE15578B1BC"));
-            cookieContainer.Add(new Uri("https://tracking.skysoft.vn"),
-                new Cookie("tokenID", Uri.UnescapeDataString("qFqToxW%2BL4kKaJnqVOawNpeXvUb3nETt%2BibcHRPZao7%2FfOa6vLSWafAp46CBimQLyscaEEr2l9irp943oVJTRJP8%2FfV2aOXh9Tisdp%2B2N2%2Fc%2FtHxUW4EE0ytS6JcMWi9YvjGO6rXWOuy2DheXePYO%2Frrs76jvWqO%2FRhL1UzcgtLQF3Rug%2FQUin7H4UZMFseyi5JOqnQhCg9mBLp15pUnf%2B5TH6yXkFqrlUMGuJTb1%2B7xNC9xtD9j%2F%2Bh319%2Bhr75HNqXwq7ie9MIUb1RzhRESBhw5Uf7yGLdNJ96mj8T7WyniE24AGN%2FXVa3p1Q33UYG4vTlBpy03J3d9WIT7mv6HaSTgnzmBgG0rNCYulSFLlyBg36d2NUK5svem1QpiOViSIMucWZK1LgSxlvMbgyVUBowxwJZ3m8qOzVvsKt4XmNkZS03cYWERh2B0LaKBLBEfVBM62quCIYUfeNYQbUwzEp7thrZZKagGJMPtyngRphU%3D")));
-
-            // Thêm User-Agent
             httpClient.DefaultRequestHeaders.Add("User-Agent", "Mozilla/4.0 (compatible; MSIE 6.0; Windows 2000)");
-            httpClient.DefaultRequestHeaders.Accept.Clear();
-            httpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("text/html"));
-            httpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("image/gif"));
-            httpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("image/jpeg"));
-            httpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("*/*", 0.2));
-            httpClient.DefaultRequestHeaders.Add("Accept-Encoding", "gzip, deflate");
+        }
+        /// <summary>
+        /// Lấy cookie từ server (JSESSIONID + tokenID) và set thẳng vào cookieContainer
+        /// </summary>
+        public async Task<string> GetCookieAsync()
+        {
+            var requestTime = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+            var body = $"__DDTP__=$var.Function$..getProfile.$Var.Class$..icom.skysoft.gps.server.CommonBean.$Var.PrimaryKey$..skysoft.$requestTime$..{requestTime}";
+            var content = new StringContent(body, Encoding.UTF8, "application/x-www-form-urlencoded");
+
+            var response = await httpClient.PostAsync(_url, content);
+
+            // Lấy tất cả Set-Cookie từ header và add vào CookieContainer
+            if (response.Headers.TryGetValues("Set-Cookie", out var setCookies))
+            {
+                foreach (var cookieStr in setCookies)
+                {
+                    var cookie = ParseCookie(cookieStr, new Uri(_url));
+                    if (cookie != null)
+                    {
+                        cookieContainer.Add(cookie);
+                    }
+                }
+            }
+
+            // Debug: in tất cả cookie
+            var cookies = cookieContainer.GetCookies(new Uri(_url));
+            foreach (Cookie c in cookies)
+            {
+                Console.WriteLine($"Cookie: {c.Name}={c.Value}; Domain={c.Domain}; Path={c.Path}");
+            }
+
+            return cookies["JSESSIONID"]?.Value;
         }
 
-        public async Task<string> GetDatas()
+        /// <summary>
+        /// Parse Set-Cookie string thành System.Net.Cookie
+        /// </summary>
+        private Cookie ParseCookie(string cookieStr, Uri uri)
         {
-            string inputFile = "236_Response.bin";
-            string outputFile = "output.xls"; // hoặc .xls tùy gói dữ liệu
-
-            // 1. Đọc toàn bộ file nhị phân
-            byte[] data = File.ReadAllBytes(inputFile);
-
             try
             {
-                byte[] header = new byte[4];
-                using (var fs = File.OpenRead(inputFile))
-                {
-                    fs.Read(header, 0, 4);
-                }
-                if (Encoding.UTF8.GetString(header) != "DDTP")
-                    return "File is not a valid DDTP package.";
+                var parts = cookieStr.Split(';', 2);
+                var keyValue = parts[0].Split('=', 2);
+                if (keyValue.Length != 2) return null;
 
-                // 2. Nạp vào DDTP
-                var ddtp = new DDTP(data);
-
-                // 3. Lấy byte[] Excel từ $Var.Return$
-                byte[] excelBytes = ddtp.GetByteArray("$Var.Return$");
-
-                if (excelBytes != null && excelBytes.Length > 0)
-                {
-                    File.WriteAllBytes(outputFile, excelBytes);
-                   return $"Xuất Excel thành công: {outputFile} ({excelBytes.Length} bytes)";
-                }
-                else
-                {
-                    return "Không tìm thấy dữ liệu Excel trong $Var.Return$";
-                }
+                return new Cookie(keyValue[0].Trim(), Uri.UnescapeDataString(keyValue[1].Trim()), "/", uri.Host);
             }
-            catch (Exception ex)
+            catch
             {
-                return  "Lỗi khi đọc DDTP: " + ex.Message;
+                return null;
             }
         }
 
-        public static DDTP HexToDDTP(string hex)
+        /// <summary>
+        /// Tạo DDTP login request từ username/password
+        /// </summary>
+        private static byte[] CreateLoginDDTP(string username, string password, string sessionKey)
         {
-            // 1. Làm sạch string: chỉ giữ hex
-            string hexClean = new string(hex.Where(c => Uri.IsHexDigit(c)).ToArray());
+            var ddtp = new DDTP(true); // compress
+            ddtp.SetString("$Var.Function$", "login");
+            ddtp.SetString("$Var.Class$", "com.skysoft.gps.server.CommonBean");
+            ddtp.SetString("username", username);
+            ddtp.SetString("password", password);
+            ddtp.SetString("deviceID", "VNET");           // phải là device hợp lệ, ví dụ "M2" hoặc "X5"
+            ddtp.SetString("requestSource", "CSharpClient"); // thường "CSharpClient"
+            ddtp.SetString("os", "Windows");
+            ddtp.SetString("serverIP", "");   // bỏ trống hoặc theo config server
+            ddtp.SetString("serverPort", ""); // bỏ trống hoặc theo config server
+            ddtp.SetString("$Var.SessionKey$", sessionKey);
 
-            // 2. Kiểm tra số ký tự chẵn
-            if (hexClean.Length % 2 != 0)
-                throw new ArgumentException("Hex string phải có số ký tự chẵn.");
 
-            // 3. Chuyển sang byte[]
-            byte[] data = new byte[hexClean.Length / 2];
-            for (int i = 0; i < data.Length; i++)
-                data[i] = Convert.ToByte(hexClean.Substring(i * 2, 2), 16);
-
-            // 4. Tạo DDTP từ byte[]
-            var ddtp = new DDTP(data);
-            return ddtp;
+            using var ms = new System.IO.MemoryStream();
+            ddtp.Store(ms, true);
+            return ms.ToArray();
         }
 
-        public static byte[] HexStringToByteArray(string hex)
+        /// <summary>
+        /// Gửi request DDTP và nhận về byte[] response
+        /// </summary>
+        private async Task<byte[]> SendDDTPAsync(byte[] body)
         {
-            if (hex.Length % 2 != 0)
-                throw new ArgumentException("Hex string phải có số ký tự chẵn");
+            var content = new ByteArrayContent(body);
+            content.Headers.ContentType = new MediaTypeHeaderValue("application/x-www-form-urlencoded");
 
-            byte[] bytes = new byte[hex.Length / 2];
-            for (int i = 0; i < bytes.Length; i++)
-                bytes[i] = Convert.ToByte(hex.Substring(i * 2, 2), 16);
-            return bytes;
-        }
-
-        public async Task<string> DownloadDdtpFile()
-        {
-            using var response = await httpClient.GetAsync("https://tracking.skysoft.vn/");
+            var response = await httpClient.PostAsync(_url, content);
             response.EnsureSuccessStatusCode();
-            byte[] ddtpBytes = await response.Content.ReadAsByteArrayAsync();
-            File.WriteAllBytes("236_Response.bin", ddtpBytes);
-            return "Tải tệp DDTP thành công.";
+
+            // Lấy tất cả Set-Cookie từ header và add vào CookieContainer
+            if (response.Headers.TryGetValues("Set-Cookie", out var setCookies))
+            {
+                foreach (var cookieStr in setCookies)
+                {
+                    var cookie = ParseCookie(cookieStr, new Uri(_url));
+                    if (cookie != null)
+                    {
+                        cookieContainer.Add(cookie);
+                    }
+                }
+            }
+
+            return await response.Content.ReadAsByteArrayAsync();
+        }
+
+        /// <summary>
+        /// Login và trả về DDTP object từ response
+        /// </summary>
+        public async Task<DDTP> LoginAsync(string username, string password, string sessionKey)
+        {
+            var loginBody = CreateLoginDDTP(username, password,sessionKey);
+            var responseBytes = await SendDDTPAsync(loginBody);
+
+            using var ms = new System.IO.MemoryStream(responseBytes);
+            var responseDDTP = new DDTP(ms);
+
+            return responseDDTP;
+        }
+
+        public async Task<string> AuthenticationAsync()
+        {
+            var ss = await GetCookieAsync();
+
+            string username = "namthangbl";
+            string password = "ntbl@2501";
+
+            DDTP loginResponse = await LoginAsync(username, password, ss);
+
+            string returnValue = loginResponse.GetString("$Var.Return$");
+            Console.WriteLine("Return: " + returnValue);
+
+            var cookies = cookieContainer.GetCookies(new Uri(_url));
+            string jsessionid = cookies["JSESSIONID"]?.Value;
+            string tokenID = cookies["tokenID"]?.Value; // nếu server trả tokenID
+            Console.WriteLine($"JSESSIONID={jsessionid}; tokenID={tokenID}");
+
+            return returnValue; // hoặc return tokenID tùy API cần
         }
     }
+
 }

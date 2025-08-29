@@ -1,22 +1,27 @@
 ﻿@page "/skysoft"
 <h3>Skysoft</h3>
+<button class="rounded bg-blue-600 px-3 py-1 hover:bg-blue-700"
+        @onclick="OpenSkysoft">
+    Mở Skysoft
+</button>
 
-@requestTime
+<span>@Cookie</span>
+<span>@Token</span>
 
-<input type="button" value="Export" @onclick="ReportsExport" />
-<span>@rs</span>
+
 
 @code {
     [Inject] private ISkysoftService skysoftService { get; set; } = default!;
-    private string rs { get; set; } = default!;
-    private long requestTime { get; set; } = default!;
+    private string Cookie { get; set; } = default!;
+    private string Token { get; set; } = default!;
+    private List<UserSkysoft> users = new List<UserSkysoft>();
 
     protected override async Task OnInitializedAsync()
     {
         try
         {
-            // RequestTime
-             requestTime = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+            Cookie = await skysoftService.GetCookieAsync();
+            Token = await skysoftService.AuthenticationAsync();
         }
         catch (Exception ex)
         {
@@ -24,15 +29,36 @@
         }
     }
 
-    private async Task ReportsExport()
+    [Inject] private IJavaLauncherAutomation Launcher { get; set; } = default!;
+    private void OpenSkysoft()
     {
-        try
+        string jnlpPath = @"D:\Dev\Skysoft\skysoft.jnlp";
+
+        users= new List<UserSkysoft>
         {
-            rs = await skysoftService.GetDatas();
-        }
-        catch (Exception ex)
+            new UserSkysoft
+            {
+                Username = "namthangbl",
+                Password = "ntbl@2501",
+                ProviderCode = "BLU"
+            },
+            new UserSkysoft
+            {
+                Username = "namthangvl",
+                Password = "ntvl@25",
+                ProviderCode = "VLG"
+            },
+            new UserSkysoft
+            {
+                Username = "namthangst",
+                Password = "ntst@2501",
+                ProviderCode = "STG"
+            }
+        };
+
+        @foreach (var user in users)
         {
-            var msg = ex.Message;
-        }
+            Launcher.OpenSkysoftJnlp(jnlpPath, user);
+        }   
     }
 }
