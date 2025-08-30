@@ -1,6 +1,10 @@
 ﻿@page "/vetcs"
 
 <div class="flex gap-2 bg-gray-900 p-2 text-gray-100">
+    <button class="rounded bg-red-600 px-3 py-1 hover:bg-red-700"
+            @onclick="@(AppendFormatGoogleSheetAsync)">
+        LoadData
+    </button>
     <button class="rounded bg-blue-600 px-3 py-1 hover:bg-blue-700"
             @onclick="@(() => LoadProvinceAsync("BLU"))">
         Bạc Liêu
@@ -229,7 +233,49 @@ else
                 fromdate = startDate.ToString("dd/MM/yyyy"),
                 toDate = endDate.ToString("dd/MM/yyyy"),
             };
+            
             vetcItems = await vetcService.PostVetcAsync(payload, currentProvider);
+
+            saveGGSheet = $"Ghi dữ liệu thành công";
+        }
+        catch (Exception ex)
+        {
+            saveGGSheet = $"Lỗi: {ex.Message}";
+        }
+        finally
+        {
+            isGetsRecording = false; // Enable button sau khi xử lý xong
+        }
+    }
+
+    private async Task AppendFormatGoogleSheetAsync()
+    {
+        try
+        {
+            isGetsRecording = true; // Disable button
+
+            // Đăng nhập
+            var listProvider = new List<string> { "BLU", "VLG", "STG" };
+            var payload = new GetsPayload
+            {
+                accountid = jsonVetc.accountid,
+                fromdate = startDate.ToString("dd/MM/yyyy"),
+                toDate = endDate.ToString("dd/MM/yyyy"),
+            };
+
+            foreach (var item in listProvider)
+            {
+                jsonVetc = item switch
+                {
+                    "BLU" => rootVetc.BLU,
+                    "VLG" => rootVetc.VLG,
+                    "STG" => rootVetc.STG,
+                    _ => null
+                };
+                userVetc = jsonVetc.User;
+                await vetcService.GetAuthenticationAsync(userVetc, item);
+                vetcItems = await vetcService.FormatPostsVetcAsync(payload, item);
+            };
 
             saveGGSheet = $"Ghi dữ liệu thành công";
         }

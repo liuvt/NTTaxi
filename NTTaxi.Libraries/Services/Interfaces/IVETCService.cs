@@ -8,5 +8,6 @@ namespace NTTaxi.Libraries.Services.Interfaces
         Task<List<VetcItem>> GetsVetcAsync(GetsPayload payload);
 
         Task<List<VetcItem>> PostVetcAsync(GetsPayload payload, string provinceCode);
+        Task<List<VetcItem>> FormatPostsVetcAsync(GetsPayload payload, string provinceCode);
     }
 }

@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.Logging;
+﻿using DocumentFormat.OpenXml.Office.CustomUI;
+using Microsoft.Extensions.Logging;
 using NTTaxi.Libraries.Extensions;
 using NTTaxi.Libraries.GoogleSheetServers;
 using NTTaxi.Libraries.GoogleSheetServers.Interfaces;
@@ -45,7 +46,7 @@ namespace NTTaxi.Libraries.Services
             // Truy cập lấy session and verification token lần đầu
             var token = await GetVerificationTokenAsync();
 
-            if(user == null)
+            if (user == null)
             {
                 throw new Exception("Không tìm thấy User!");
             }
@@ -108,7 +109,8 @@ namespace NTTaxi.Libraries.Services
                 }
 
                 // Ghi lại file
-                var option = new System.Text.Json.JsonSerializerOptions {
+                var option = new System.Text.Json.JsonSerializerOptions
+                {
                     WriteIndented = true,
                     Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping
                 };
@@ -146,6 +148,24 @@ namespace NTTaxi.Libraries.Services
                 throw new Exception("Lỗi khi lấy hoặc ghi dữ liệu VETC BLU: " + ex.Message);
             }
         }
+
+        public async Task<List<VetcItem>> FormatPostsVetcAsync(GetsPayload payload, string provinceCode)
+        {
+            var date = await GetsVetcAsync(new GetsPayload { accountid = payload.accountid, fromdate = DateTime.Now.AddDays(-1).ToString("dd/MM/yyyy"), toDate = DateTime.Now.ToString("dd/MM/yyyy") });
+            if (date != null && date.Count > 0)
+            {
+                // Xóa dữ liệu trước khi add vào Google Sheets
+                await vetcGgSheetServer.ClearVetcAsync(provinceCode);
+                // Ghi dữ liệu vào Google Sheets
+                var result = await vetcGgSheetServer.AppendVetcAsync(date, provinceCode);
+                return date;
+            }
+            else
+            {
+                return new List<VetcItem>();
+            }
+        }
+
 
         public async Task<List<VetcItem>> GetsVetcAsync(GetsPayload payload)
         {

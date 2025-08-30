@@ -1,4 +1,6 @@
-﻿using Google.Apis.Auth.OAuth2;
+﻿using DocumentFormat.OpenXml.EMMA;
+using DocumentFormat.OpenXml.Office.CustomUI;
+using Google.Apis.Auth.OAuth2;
 using Google.Apis.Services;
 using Google.Apis.Sheets.v4;
 using Google.Apis.Sheets.v4.Data;
@@ -19,10 +21,6 @@ namespace NTTaxi.Libraries.GoogleSheetServers
         private readonly string AppName = "ADMIN VETC";
         private readonly string SpreadSheetId = "1NlFKTU6Rqe5F1AJqzv_nML1-Lve7ScBLD9QuvR9YuUA";
 
-        // For Sheet
-        private readonly string sheetBLU = "BLU";
-
-
         public VetcGgSheetServer()
         {
             //File xác thực google tài khoản
@@ -42,7 +40,7 @@ namespace NTTaxi.Libraries.GoogleSheetServers
         }
         #endregion
 
-        #region App Khách Hàng
+        #region Vetc
         //Ghi log vào Google Sheet
         public async Task<bool> AppendVetcAsync(List<VetcItem> models, string provinceCode)
         {
@@ -57,7 +55,7 @@ namespace NTTaxi.Libraries.GoogleSheetServers
                     model.CheckerOutDateTime?.ToString("dd/MM/yyyy HH:mm:ss")!,
                     model.Pass,
                     model.PriceTicketType,
-                    "",
+                    model.CheckerOutDateTime?.ToString("HH:mm:ss"), //Lấy cột giờ của ngày qua Trạm thu phí
                     DateTime.Now.ToString("dd/MM/yyyy")
                 }).ToList<IList<object>>();
 
@@ -107,5 +105,30 @@ namespace NTTaxi.Libraries.GoogleSheetServers
             }
         }
         #endregion
+
+        // Lọc lại danh sách từ 5:00 ngay hôm trước đến 5:00 ngay hôm nay 
+        public async Task<(List<VetcItem> models, string provinceCode)> FilterAppendVetcAsync(List<VetcItem> models, string provinceCode)
+        {
+            try
+            {
+                //Convert list models to a list of values
+                var values = models.Where(model
+                    //Theo ngày 
+                    => (
+                        model.CheckerOutDateTime >= DateTime.Now.AddDays(-1).Date.AddHours(5)
+                        //......
+                    )
+
+                ).ToList();
+
+                return (values, provinceCode);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[{DateTime.Now:yyyy-MM-dd HH:mm:ss}] [Connection GoogleSheet Error] {ex.Message}");
+                return (new List<VetcItem>(), provinceCode);
+            }
+        }
+
     }
 }
