@@ -1,5 +1,4 @@
 ﻿@page "/gsm"
-@using NTTaxi.Libraries.Models.Gsms
 
 @if (!loaded_form)
 {
@@ -13,23 +12,25 @@ else
                 <div class="mb-4 text-2xl font-bold text-green-400">ALI Control Panel</div>
             </div>
         </div>
+
         <div class="flex flex-wrap items-center gap-4 bg-gray-900 p-4 text-gray-100">
             <div>
                 <label class="px-2">Tài khoản:</label>
                 <input class="rounded border border-gray-600 bg-gray-800 px-2 py-1 text-gray-100"
-                        />
+                       @bind="userGsm.Email" />
             </div>
             <div>
                 <label class="px-2">Mật khẩu:</label>
                 <input type="password"
                        class="rounded border border-gray-600 bg-gray-800 px-2 py-1 text-gray-100"
-                        />
+                       @bind="userGsm.Password" />
             </div>
             <button class="rounded-xl bg-green-500 px-2 py-1 text-sm text-white hover:bg-green-600 disabled:cursor-not-allowed disabled:bg-gray-500"
-                    disabled="@isLoading">
+                    @onclick="Login" disabled="@isLoading">
                 @(isLoading ? "Đang đăng nhập..." : "Đăng nhập")
             </button><span class="text-teal-700">@authenStatus</span>
         </div>
+
         <div class="mt-2">
             <div class="flex flex-wrap items-center gap-4 bg-gray-900 p-4 text-gray-100">
                 <div>
@@ -54,6 +55,7 @@ else
 }
 
 @code {
+    [Inject] private IGsmService gsmService { get; set; } = default!;
     private bool isLoading = false;
     private bool isGetsRecording = false;
     private bool loaded_form = false;
@@ -61,20 +63,50 @@ else
     private string authenStatus = "";
     private string saveGGSheet = "";
 
-    private DateTime startDate { get; set; } = DateTime.Now.AddDays(-1).Date.AddHours(5);
-    private DateTime endDate { get; set; } = DateTime.Now.Date.AddHours(5);
-    private UserAli userAli { get; set; } = new UserAli();
+    private string startDate { get; set; } = DateTime.Now.AddDays(-1).Date.AddHours(5).ToString("dd/MM/yyyy HH:mm:ss");
+    private string endDate { get; set; } = DateTime.Now.Date.AddHours(5).ToString("dd/MM/yyyy HH:mm:ss");
+    private GsmUser userGsm { get; set; } = new GsmUser();
 
     protected override async Task OnInitializedAsync()
     {
         try
         {
+            userGsm = JsonSerializer.Deserialize<GsmUser>(await File.ReadAllTextAsync("GsmAuthentication.json"));
+
+            if (userGsm != null)
+            {
+                //cancelOrders = await aliService.GetsCancelOrderAli(startDate, endDate); //Hiển thị cho client
+                //switchBoards = await aliService.GetsSwitchboardAli(startDate, endDate);
+                await Login();
                 loaded_form = true;
+            }
+            else
+            {
+                loadedForm_string = "Không tìm thấy file GsmAuthentication!";
+            }
         }
         catch (Exception ex)
         {
-            loaded_form = false;
-            loadedForm_string = ex.Message;
+            authenStatus = $"{ex.Message}";
+        }
+    }
+
+    private async Task Login()
+    {
+        try
+        {
+            isLoading = true; // Disable button
+            var success = await gsmService.GetAuthTokenAsync(userGsm);
+            authenStatus = success != null ? "Đăng nhập thành công, đã ghi nhớ tài khoản!" : "Tài khoản đăng nhập không đúng vui lòng nhập lại!";
+        }
+        catch (Exception ex)
+        {
+            authenStatus = "Đăng nhập thất bại, vui lòng nhập lại!";
+            Console.WriteLine(ex);
+        }
+        finally
+        {
+            isLoading = false; // Enable button sau khi xử lý xong
         }
     }
 }

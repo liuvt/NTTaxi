@@ -30,6 +30,7 @@ namespace NTTaxi
             builder.Services.AddScoped<IVetcGgSheetServer, VetcGgSheetServer>();
             // Get data from HTTP API
             builder.Services.AddScoped<IAliService, AliService>();
+            builder.Services.AddScoped<IGsmService, GsmService>();
             builder.Services.AddScoped<IVETCService, VETCService>();
 
             // Testing Skysoft
