@@ -114,7 +114,8 @@ namespace NTTaxi.Libraries.Services
                     OrderAlisWithProvince("KIÊN GIANG", "15", start, end),
                     OrderAlisWithProvince("HẬU GIANG", "62", start, end),
                     OrderAlisWithProvince("AN GIANG", "16", start, end),
-                    OrderAlisWithProvince("SÓC TRĂNG", "20", start, end)
+                    OrderAlisWithProvince("SÓC TRĂNG", "20", start, end),
+                    OrderAlisWithProvince("CẦN THƠ", "5", start, end)
                 };
 
                 var results = await Task.WhenAll(tasks);
@@ -235,7 +236,8 @@ namespace NTTaxi.Libraries.Services
                     PromoteAlisWithProvince("KIÊN GIANG", "15", start, end),
                     PromoteAlisWithProvince("HẬU GIANG", "62", start, end),
                     PromoteAlisWithProvince("AN GIANG", "16", start, end),
-                    PromoteAlisWithProvince("SÓC TRĂNG", "20", start, end)
+                    PromoteAlisWithProvince("SÓC TRĂNG", "20", start, end),
+                    PromoteAlisWithProvince("CẦN THƠ", "5", start, end)
                 };
 
                 var results = await Task.WhenAll(tasks);
@@ -381,7 +383,8 @@ namespace NTTaxi.Libraries.Services
                     ("KIÊN GIANG", "15"),
                     ("HẬU GIANG", "62"),
                     ("AN GIANG", "16"),
-                    ("SÓC TRĂNG", "20")
+                    ("SÓC TRĂNG", "20"),
+                    ("CẦN THƠ", "5")
                 };
 
                 foreach (var (name, code) in provinces)
@@ -494,7 +497,8 @@ namespace NTTaxi.Libraries.Services
                     ("KIÊN GIANG", "15"),
                     ("HẬU GIANG", "62"),
                     ("AN GIANG", "16"),
-                    ("SÓC TRĂNG", "20")
+                    ("SÓC TRĂNG", "20"),
+                    ("CẦN THƠ", "5")
                 };
 
                 foreach (var (name, code) in provinces)
@@ -639,7 +643,8 @@ namespace NTTaxi.Libraries.Services
                     ("KIÊN GIANG", "15"),
                     ("HẬU GIANG", "62"),
                     ("AN GIANG", "16"),
-                    ("SÓC TRĂNG", "20")
+                    ("SÓC TRĂNG", "20"),
+                    ("CẦN THƠ", "5")
                 };
 
                 foreach (var (name, code) in provinces)
