@@ -30,29 +30,6 @@
                 </div>
             </div>
 
-            <!-- Vetc Service -->
-            <div class="flex items-center justify-between rounded-xl bg-gray-700 p-4 shadow">
-                <div>
-                    <h2 class="text-lg font-semibold">VETC Control Panel</h2>
-                    <p class="text-sm text-gray-400">
-                        Đồng bộ lúc 03:30 - @vetcActivity
-                        <span class="font-bold @(vetcWorker.IsRunning ? "text-green-400" : "text-red-400")">
-                            @(vetcWorker.IsRunning ? "Running" : "Stopped")
-                        </span>
-                    </p>
-                </div>
-                <div class="flex gap-2">
-                    <button class="rounded-lg bg-green-500 px-4 py-2 text-white hover:bg-green-600"
-                            @onclick="VetcStart">
-                        Start
-                    </button>
-                    <button class="rounded-lg bg-red-500 px-4 py-2 text-white hover:bg-red-600"
-                            @onclick="VetcStop">
-                        Stop
-                    </button>
-                </div>
-            </div>
-
             <!-- Gsm Service -->
             <div class="flex items-center justify-between rounded-xl bg-gray-700 p-4 shadow">
                 <div>
@@ -85,7 +62,6 @@
     private void ToggleGSM(bool start) => gsmRunning = start;
 
     [Inject] private IAliWorker aliWorker { get; set; } = default!;
-    [Inject] private IVetcWorker vetcWorker { get; set; } = default!;
     private string aliActivity = "";
     private string gsmActivity = "";
     private string vetcActivity = "";
@@ -113,32 +89,6 @@
         catch (Exception ex)
         {
             aliActivity = $"Lỗi: {ex.Message}";
-        }
-    }
-
-    private void VetcStart()
-    {
-        try
-        {
-            vetcWorker.Start();
-            vetcActivity = $"Hoạt động!";
-        }
-        catch (Exception ex)
-        {
-            vetcActivity = $"Lỗi: {ex.Message}";
-        }
-    }
-
-    private void VetcStop()
-    {
-        try
-        {
-            vetcWorker.Stop();
-            vetcActivity = $"Dừng hoạt động!";
-        }
-        catch (Exception ex)
-        {
-            vetcActivity = $"Lỗi: {ex.Message}";
         }
     }
 

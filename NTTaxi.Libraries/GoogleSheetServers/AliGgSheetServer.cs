@@ -19,7 +19,7 @@ namespace NTTaxi.Libraries.GoogleSheetServers
         private readonly string[] Scopes = { SheetsService.Scope.Spreadsheets };
         private readonly string CredentialGGSheetService = "ggsheetaccount.json";
         private readonly string AppName = "ADMIN ALI";
-        private readonly string SpreadSheetId = "1rMB8_QIkPG_rJWF_4sph9YPjTqNQ7XIWfzkGWzWVM1k";
+        private readonly string SpreadSheetId = "1LrZoup8C2JnOmCqB9pzjlU5nKDTy_qgLUEYlKO8moME";
 
         // For Sheet
         private readonly string sheetAPPKH = "APP KHÁCH HÀNG";

@@ -1,12 +1,12 @@
 ﻿@page "/ali"
 @using NTTaxi.Libraries.Models.Gsms
-@*
+
 @if (!loaded_form)
 {
     <div class="flex min-h-screen items-center justify-center text-sm text-teal-700">@loadedForm_string</div>
 }
 else
-{*@
+{
     <div class="mt-2 w-full">
         <div class="mt-2">
             <div class="flex bg-gray-900 p-2 text-gray-100">
@@ -250,7 +250,7 @@ else
             </div>
         }
     </div>
-@*}*@
+}
 
 @code {
     [Inject] private IAliService aliService { get; set; } = default!;
