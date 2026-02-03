@@ -289,7 +289,7 @@ else
                 promotes = await aliService.GetsPromoteAli(schemaJson, startDate, endDate);
                 //cancelOrders = await aliService.GetsCancelOrderAli(startDate, endDate); //Hiển thị cho client
                 //switchBoards = await aliService.GetsSwitchboardAli(startDate, endDate);
-                partnerGSMs = await aliService.GetsPartnerGSMAli(startDate, endDate);
+                //partnerGSMs = await aliService.GetsPartnerGSMAli(startDate, endDate);
 
                 loaded_form = true;
             }
@@ -329,19 +329,21 @@ else
         {
             isGetsRecording = true; // Disable button
             await aliService.PostOrderAli(schemaJson, startDate, endDate); 
-            orders = await aliService.GetsOrderAli(schemaJson, startDate, endDate); 
+            //orders = await aliService.GetsOrderAli(schemaJson, startDate, endDate); 
 
             await aliService.PostPromoteAli(schemaJson, startDate, endDate);
-            promotes = await aliService.GetsPromoteAli(schemaJson, startDate, endDate);
+            //promotes = await aliService.GetsPromoteAli(schemaJson, startDate, endDate);
 
             await aliService.PostCancelOrderAli(startDate, endDate);
-            cancelOrders = await aliService.GetsCancelOrderAli( startDate, endDate); 
+            //cancelOrders = await aliService.GetsCancelOrderAli( startDate, endDate); 
 
             await aliService.PostSwitchboardAli(startDate, endDate);
-            switchBoards = await aliService.GetsSwitchboardAli(startDate, endDate);
+            //switchBoards = await aliService.GetsSwitchboardAli(startDate, endDate);
 
             await aliService.PostPartnerGSMAli(startDate, endDate);
-            partnerGSMs = await aliService.GetsPartnerGSMAli(startDate, endDate);
+            //partnerGSMs = await aliService.GetsPartnerGSMAli(startDate, endDate);
+
+            await aliService.PostOnlineAppAli(schemaJson, startDate, endDate);
 
             saveGGSheet = $"Ghi dữ liệu thành công";
         }

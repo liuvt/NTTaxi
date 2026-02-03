@@ -1,4 +1,5 @@
 ﻿using ClosedXML.Excel;
+using DocumentFormat.OpenXml.EMMA;
 using DocumentFormat.OpenXml.Wordprocessing;
 using Microsoft.Extensions.Logging;
 using NTTaxi.Libraries.GoogleSheetServers.Interfaces;
@@ -18,11 +19,12 @@ namespace NTTaxi.Libraries.Services
         private readonly HttpClient _client;
         private readonly CookieContainer _cookieContainer;
         private readonly string endpoint_Login = "account/login";
-        private readonly string endpoint_Order = "request/widget?"; 
+        private readonly string endpoint_Order = "request/widget?";
         private readonly string endpoint_Promote = "transaction/money?";
         private readonly string endpoint_Switchboard = "request?";
         private readonly string endpoint_PartnerGSM = "widget-request/widget-request-gsm?";
-        
+        private readonly string endpoint_OnlineApp = "statistic/driver-onlinev2?";
+
         private readonly Uri _baseUri = new Uri("https://adminphuquoc2.dieuhanhtaxi.vn/");
         private readonly IAliGgSheetServer aliGgSheetServer;
         private readonly ILogger<AliService> logger;
@@ -36,12 +38,14 @@ namespace NTTaxi.Libraries.Services
             var handler = new HttpClientHandler
             {
                 CookieContainer = _cookieContainer,
-                AllowAutoRedirect = true
+                AllowAutoRedirect = true,
+                MaxConnectionsPerServer = 3
             };
 
             _client = new HttpClient(handler)
             {
-                BaseAddress = _baseUri
+                BaseAddress = _baseUri,
+                Timeout = Timeout.InfiniteTimeSpan // để timeout theo CTS từng request
             };
         }
         #region Authentication
@@ -562,7 +566,7 @@ namespace NTTaxi.Libraries.Services
                 cancelOrders.Add(cancelOrder);
             }
             logger.LogInformation($"Lấy được {cancelOrders.Count} đơn hàng hủy từ khu vực {area}");
-            return cancelOrders; 
+            return cancelOrders;
         }
         private string CancelOrderQueryStringParameters(string area, DateTime startTime, DateTime endTime)
         {
@@ -809,7 +813,7 @@ namespace NTTaxi.Libraries.Services
                 partners.Add(partner);
             }
 
-            return partners; 
+            return partners;
         }
 
         private string PartnerGSMQueryStringParameters(DateTime startTime, DateTime endTime)
@@ -830,6 +834,234 @@ namespace NTTaxi.Libraries.Services
             return query.ToString();
         }
         #endregion
+
+
+        #region Online App
+        public async Task<List<OnlineAppAli>> GetsOnlineAli(SchemaJson _json, DateTime start, DateTime end)
+        {
+            try
+            {
+                var datas = new List<OnlineAppAli>();
+                foreach (var ck in _json.CookieAli)
+                    _cookieContainer.Add(_baseUri, new Cookie(ck.key, ck.value));
+
+                // Tạo các task async cho từng tỉnh
+                var tasks = new[]
+                {
+                    OnlineAppAlisWithProvince("BẠC LIÊU", "64", start, end),
+                    OnlineAppAlisWithProvince("VĨNH LONG", "61", start, end),
+                    OnlineAppAlisWithProvince("CÀ MAU", "63", start, end),
+                    OnlineAppAlisWithProvince("KIÊN GIANG", "15", start, end),
+                    OnlineAppAlisWithProvince("HẬU GIANG", "62", start, end),
+                    OnlineAppAlisWithProvince("AN GIANG", "16", start, end),
+                    OnlineAppAlisWithProvince("SÓC TRĂNG", "20", start, end),
+                    OnlineAppAlisWithProvince("CẦN THƠ", "5", start, end)
+                };
+
+                var results = await Task.WhenAll(tasks);
+                datas = results.SelectMany(r => r.Item2).ToList();
+                // Gọi phương thức đăng nhập
+                return datas;
+            }
+            catch (Exception ex)
+            {
+                throw new Exception($"Lỗi khi lấy dữ liệu online app: {ex.Message}");
+            }
+        }
+
+        // Post lên Google Sheet
+        public async Task PostOnlineAppAli(SchemaJson _json, DateTime start, DateTime end)
+        {
+            try
+            {
+                await aliGgSheetServer.ClearOnlineAliAsync(); // Xóa dữ liệu cũ
+                //var data = await GetsOnlineAli(_json, start, end); // Lấy dữ liệu
+                var data = await GetsOnlineAliV2(_json, start, end); // Lấy dữ liệu
+                await aliGgSheetServer.AppendOnlineAliAsync(data); // Post lên Google Sheet
+            }
+            catch (Exception ex)
+            {
+                throw new Exception($"Lỗi khi lấy dữ liệu online app: {ex.Message}");
+            }
+        }
+
+        private async Task<(string, List<OnlineAppAli>)> OnlineAppAlisWithProvince(string province, string provincecode, DateTime start, DateTime end)
+        {
+            var data = await OnlineAppAlis(provincecode, start, end);
+            return (Province: province, OnlineAppAli: data);
+        }
+
+        private async Task<List<OnlineAppAli>> OnlineAppAlis(string area, DateTime start, DateTime end)
+        {
+            var response = await _client.GetAsync(_baseUri + endpoint_OnlineApp + OnlineAppQueryStringParameters(area, start, end));
+            //Console.WriteLine($"Data: {response}");
+            var datas = new List<OnlineAppAli>();
+
+            if (!response.IsSuccessStatusCode)
+                return datas;
+
+            var fileBytes = await response.Content.ReadAsByteArrayAsync();
+            using var ms = new MemoryStream(fileBytes);
+            using var workbook = new XLWorkbook(ms);
+            var ws = workbook.Worksheet(1);
+
+            //Ingore header row
+            foreach (var row in ws.RowsUsed().Skip(3))
+            {
+                //Check null or empty row
+                if (row.Cells().All(c => string.IsNullOrWhiteSpace(c.GetString())))
+                    break;
+
+                var data = new OnlineAppAli
+                {
+                    ID = row.Cell(2).GetString(),
+                    DriverName = row.Cell(3).GetString(),
+                    DriverPhoneNumber = row.Cell(4).GetString(),
+                    DriveNo = row.Cell(5).GetString(),
+                    DrivePlate = row.Cell(6).GetString(),
+                    Team = row.Cell(7).GetString(),
+                    OnlineTime = row.Cell(8).GetString()
+                };
+                datas.Add(data);
+            }
+
+            return datas;
+        }
+
+        private string OnlineAppQueryStringParameters(string area, DateTime startTime, DateTime endTime)
+        {
+            var query = HttpUtility.ParseQueryString(string.Empty);
+            query["province"] = area;
+            query["driver_code"] = "";
+            query["taxi_code"] = "";
+            query["taxi_serial"] = "";
+            query["phone_driver"] = "";
+            query["from-date"] = startTime.ToString("dd-MM-yyyy HH:mm");
+            query["to-date"] = endTime.ToString("dd-MM-yyyy HH:mm");
+            query["status_statistic"] = "1";
+            query["act"] = "2"; //1 là thống kê, 2 là xuất excel
+
+            return query.ToString();
+        }
+
+        //V2
+        public async Task<List<OnlineAppAli>> GetsOnlineAliV2(SchemaJson _json, DateTime start, DateTime end)
+        {
+            foreach (var ck in _json.CookieAli)
+                _cookieContainer.Add(_baseUri, new Cookie(ck.key, ck.value));
+
+            var provinces = new (string Name, string Code)[]
+            {
+                ("BẠC LIÊU", "64"),
+                ("VĨNH LONG", "61"),
+                ("CÀ MAU", "63"),
+                ("KIÊN GIANG", "15"),
+                ("HẬU GIANG", "62"),
+                ("AN GIANG", "16"),
+                ("SÓC TRĂNG", "20"),
+                ("CẦN THƠ", "5")
+            };
+
+            var throttle = new SemaphoreSlim(3); // 2-3 là hợp lý
+            var tasks = provinces.Select(async p =>
+            {
+                await throttle.WaitAsync();
+                try
+                {
+                    var list = await OnlineAppAlisWithRetry(p.Name, p.Code, start, end);
+                    return list;
+                }
+                finally
+                {
+                    throttle.Release();
+                }
+            });
+
+            var results = await Task.WhenAll(tasks);
+            return results.SelectMany(x => x).ToList();
+        }
+
+        private async Task<List<OnlineAppAli>> OnlineAppAlisWithRetry(string provinceName, string code, DateTime start, DateTime end)
+        {
+            var delayMs = 1500;
+
+            for (int attempt = 1; attempt <= 4; attempt++)
+            {
+                try
+                {
+                    using var cts = new CancellationTokenSource(TimeSpan.FromMinutes(4)); // tăng/giảm tùy thực tế
+                    var data = await OnlineAppAlisV2(code, start, end, cts.Token);
+
+                    // nếu thỉnh thoảng server trả file rỗng do chưa kịp tạo
+                    if (data.Count > 0 || attempt == 4)
+                        return data;
+
+                    throw new Exception("Excel empty");
+                }
+                catch (TaskCanceledException ex) when (attempt < 4)
+                {
+                    logger.LogWarning(ex, $"OnlineApp timeout {provinceName}({code}) attempt {attempt}");
+                }
+                catch (HttpRequestException ex) when (attempt < 4)
+                {
+                    logger.LogWarning(ex, $"OnlineApp network error {provinceName}({code}) attempt {attempt}");
+                }
+                catch (Exception ex) when (attempt < 4)
+                {
+                    logger.LogWarning(ex, $"OnlineApp error {provinceName}({code}) attempt {attempt}");
+                }
+
+                await Task.Delay(delayMs + Random.Shared.Next(0, 400));
+                delayMs *= 2; // backoff
+            }
+
+            logger.LogError($"OnlineApp FAILED {provinceName}({code}) after retries");
+            return new List<OnlineAppAli>();
+        }
+
+        private async Task<List<OnlineAppAli>> OnlineAppAlisV2(string province, DateTime start, DateTime end, CancellationToken ct)
+        {
+            var url = $"{_baseUri}{endpoint_OnlineApp}{OnlineAppQueryStringParameters(province, start, end)}";
+
+            using var req = new HttpRequestMessage(HttpMethod.Get, url);
+            using var res = await _client.SendAsync(req, HttpCompletionOption.ResponseHeadersRead, ct);
+
+            if (!res.IsSuccessStatusCode)
+                return new List<OnlineAppAli>();
+
+            // Nếu bị đá về login thì content-type thường là text/html
+            var mediaType = res.Content.Headers.ContentType?.MediaType ?? "";
+            if (mediaType.Contains("text/html", StringComparison.OrdinalIgnoreCase))
+                throw new Exception("Session expired / redirected to login (HTML returned)");
+
+            await using var stream = await res.Content.ReadAsStreamAsync(ct);
+            using var workbook = new XLWorkbook(stream);
+            var ws = workbook.Worksheet(1);
+
+            var datas = new List<OnlineAppAli>();
+
+            foreach (var row in ws.RowsUsed().Skip(3))
+            {
+                // Đổi break -> continue để không mất dữ liệu phía sau
+                if (row.CellsUsed().All(c => string.IsNullOrWhiteSpace(c.GetString())))
+                    continue;
+
+                datas.Add(new OnlineAppAli
+                {
+                    ID = row.Cell(2).GetString(),
+                    DriverName = row.Cell(3).GetString(),
+                    DriverPhoneNumber = row.Cell(4).GetString(),
+                    DriveNo = row.Cell(5).GetString(),
+                    DrivePlate = row.Cell(6).GetString(),
+                    Team = row.Cell(7).GetString(),
+                    OnlineTime = row.Cell(8).GetString()
+                });
+            }
+
+            return datas;
+        }
+        #endregion
+
     }
 }
 

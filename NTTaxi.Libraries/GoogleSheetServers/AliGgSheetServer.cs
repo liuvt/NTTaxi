@@ -27,6 +27,7 @@ namespace NTTaxi.Libraries.GoogleSheetServers
         private readonly string sheetCancel = "HỦY CUỐC TỔNG ĐÀI/APP";
         private readonly string sheetSwitchboard = "KIẾM SOÁT DỊCH VỤ HOÀN THÀNH";
         private readonly string sheetPartnerGSM = "ĐÔI TÁC GSM TRÊN ALI";
+        private readonly string sheetOnlineApp = "ONLINE APP";
 
 
         public AliGgSheetServer()
@@ -401,5 +402,71 @@ namespace NTTaxi.Libraries.GoogleSheetServers
             }
         }
         #endregion
+
+        #region Online App
+        //Ghi log vào Google Sheet
+        public async Task<bool> AppendOnlineAliAsync(List<OnlineAppAli> models)
+        {
+            try
+            {
+                //Convert list models to a list of values
+                var values = models.Select(model => new List<object> {
+                    model.ID,
+                    model.DriverName,
+                    model.DriverPhoneNumber,
+                    model.DriveNo,
+                    model.DrivePlate,
+                    model.Team,
+                    model.OnlineTime,
+                    DateTime.Now.ToString("dd/MM/yyyy")
+                }).ToList<IList<object>>();
+
+        var valueRange = new ValueRange
+                {
+                    Values = values
+                };
+
+                string range = $"{sheetOnlineApp}!A2:H";
+                await sheetsService.ltvAppendSheetValuesAsync(SpreadSheetId, range, valueRange);
+
+                Console.ForegroundColor = ConsoleColor.Green;
+                Console.WriteLine($"[{DateTime.Now:yyyy-MM-dd HH:mm:ss}] [Connection GoogleSheet Success] Đã ghi {models.Count} khuyến mãi vào Google Sheet.");
+                Console.ResetColor();
+                return true;
+            }
+            catch (Exception ex)
+            {
+                Console.ForegroundColor = ConsoleColor.Red;
+                Console.WriteLine($"[{DateTime.Now:yyyy-MM-dd HH:mm:ss}] [Connection GoogleSheet Error] {ex.Message}");
+                Console.WriteLine(ex.StackTrace);
+                Console.ResetColor();
+                return false;
+            }
+        }
+
+        //Xóa data trong Google Sheet
+        public async Task<bool> ClearOnlineAliAsync()
+        {
+            try
+            {
+                string range = $"{sheetOnlineApp}!A2:H";
+                await sheetsService.ltvClearSheetValuesAsync(SpreadSheetId, range);
+
+                Console.ForegroundColor = ConsoleColor.Green;
+                Console.WriteLine($"[{DateTime.Now:yyyy-MM-dd HH:mm:ss}] [Connection GoogleSheet Success] Đã xóa thành công.");
+                Console.ResetColor();
+                return true;
+            }
+            catch (Exception ex)
+            {
+                Console.ForegroundColor = ConsoleColor.Red;
+                Console.WriteLine($"[{DateTime.Now:yyyy-MM-dd HH:mm:ss}] [Connection GoogleSheet Error] {ex.Message}");
+                Console.WriteLine(ex.StackTrace);
+                Console.ResetColor();
+                return false;
+            }
+        }
+        #endregion
+
     }
 }

@@ -40,12 +40,13 @@ namespace NTTaxi.Libraries.Workers
                 {
                     var now = DateTime.Now;
                     // PostOrder (05:20)
-                    var orderTime = now.Date.AddHours(5).AddMinutes(20);
-                    var partnergsmTime = now.Date.AddHours(5).AddMinutes(25);
-                    var promoteTime = now.Date.AddHours(5).AddMinutes(30);
-                    var switchboardTime = now.Date.AddHours(5).AddMinutes(40);
+                    var orderTime = now.Date.AddHours(5).AddMinutes(10);
+                    var partnergsmTime = now.Date.AddHours(5).AddMinutes(15);
+                    var promoteTime = now.Date.AddHours(5).AddMinutes(25);
+                    var switchboardTime = now.Date.AddHours(5).AddMinutes(35);
                     // PostCancelOrder (05:50)
-                    var cancelOrderTime = now.Date.AddHours(5).AddMinutes(50);
+                    var cancelOrderTime = now.Date.AddHours(5).AddMinutes(45);
+                    var onlineApp = now.Date.AddHours(5).AddMinutes(55);
 
 
                     /*
@@ -61,6 +62,7 @@ namespace NTTaxi.Libraries.Workers
                         promoteTime = promoteTime.AddDays(1);
                         switchboardTime = cancelOrderTime.AddDays(1);
                         cancelOrderTime = cancelOrderTime.AddDays(1);
+                        onlineApp = onlineApp.AddDays(1);
                     }
 
                     // Waiting PostOrder
@@ -121,6 +123,19 @@ namespace NTTaxi.Libraries.Workers
                     if (!token.IsCancellationRequested)
                     {
                         await _aliService.PostCancelOrderAli(
+                            DateTime.Now.AddDays(-1).Date.AddHours(5),
+                            DateTime.Now.Date.AddHours(5));
+                    }
+
+                    // Waiting OnlineApp
+                    var delayToOnlineApp = onlineApp - DateTime.Now;
+                    if (delayToOnlineApp > TimeSpan.Zero)
+                        await Task.Delay(delayToOnlineApp, token);
+
+                    if (!token.IsCancellationRequested)
+                    {
+                        await _aliService.PostOnlineAppAli(
+                            await LoadSchemaJson(),
                             DateTime.Now.AddDays(-1).Date.AddHours(5),
                             DateTime.Now.Date.AddHours(5));
                     }

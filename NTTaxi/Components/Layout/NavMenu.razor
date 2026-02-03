@@ -19,11 +19,6 @@
             <span>Dashboard</span>
         </NavLink>
         <div class="text-lg text-green-200">ĐƠN HÀNG</div>
-        <NavLink @onclick="ToggleSidebar" class="flex items-center gap-2 rounded-lg px-3 py-2 hover:bg-gray-700"
-                 href="gsm">
-            <img src="./imgs/gsm.png" alt="GSM" class="h-4" />
-            <span>Xanh SM</span>
-        </NavLink>
 
         <NavLink @onclick="ToggleSidebar" class="flex items-center gap-2 rounded-lg px-3 py-2 hover:bg-gray-700"
                  href="ali">
@@ -32,6 +27,14 @@
             </svg>
             <span>Ali</span>
         </NavLink>
+
+        <NavLink @onclick="ToggleSidebar" class="flex items-center gap-2 rounded-lg px-3 py-2 hover:bg-gray-700"
+                 href="gsm">
+            <img src="./imgs/gsm.png" alt="GSM" class="h-4" />
+            <span>Xanh SM</span>
+        </NavLink>
+
+        
     </nav>
 </div>
 @code {
