@@ -27,6 +27,8 @@ namespace NTTaxi.Libraries.GoogleSheetServers
         private readonly string sheetCancel = "HỦY CUỐC TỔNG ĐÀI/APP";
         private readonly string sheetSwitchboard = "KIẾM SOÁT DỊCH VỤ HOÀN THÀNH";
         private readonly string sheetPartnerGSM = "ĐÔI TÁC GSM TRÊN ALI";
+        private readonly string sheetPartnerVNPay = "ĐÔI TÁC VNPAY TRÊN ALI";
+        
         private readonly string sheetOnlineApp = "ONLINE APP";
 
 
@@ -385,6 +387,90 @@ namespace NTTaxi.Libraries.GoogleSheetServers
                 };
 
                 string range = $"{sheetPartnerGSM}!A2:Q";
+                await sheetsService.ltvAppendSheetValuesAsync(SpreadSheetId, range, valueRange);
+
+                Console.ForegroundColor = ConsoleColor.Green;
+                Console.WriteLine($"[{DateTime.Now:yyyy-MM-dd HH:mm:ss}] [Connection GoogleSheet Success] Đã thêm {models.Count} bản ghi vào Google Sheet.");
+                Console.ResetColor();
+                return true;
+            }
+            catch (Exception ex)
+            {
+                Console.ForegroundColor = ConsoleColor.Red;
+                Console.WriteLine($"[{DateTime.Now:yyyy-MM-dd HH:mm:ss}] [Connection GoogleSheet Error] {ex.Message}");
+                Console.WriteLine(ex.StackTrace);
+                Console.ResetColor();
+                return false;
+            }
+        }
+        #endregion
+
+        #region VNPay Partner
+        //Xóa data trong Google Sheet
+        public async Task<bool> ClearPartnerVNPayAliAsync()
+        {
+            try
+            {
+                string range = $"{sheetPartnerVNPay}!A2:S";
+                await sheetsService.ltvClearSheetValuesAsync(SpreadSheetId, range);
+
+                Console.ForegroundColor = ConsoleColor.Green;
+                Console.WriteLine($"[{DateTime.Now:yyyy-MM-dd HH:mm:ss}] [Connection GoogleSheet Success] Đã xóa thành công.");
+                Console.ResetColor();
+                return true;
+            }
+            catch (Exception ex)
+            {
+                Console.ForegroundColor = ConsoleColor.Red;
+                Console.WriteLine($"[{DateTime.Now:yyyy-MM-dd HH:mm:ss}] [Connection GoogleSheet Error] {ex.Message}");
+                Console.WriteLine(ex.StackTrace);
+                Console.ResetColor();
+                return false;
+            }
+        }
+
+        //Ghi log vào Google Sheet
+        public async Task<bool> AppendPartnerVNPayAliAsync(List<PartnerVNPay> models)
+        {
+            try
+            {
+                if(models == null || models.Count == 0)
+                {
+                    Console.ForegroundColor = ConsoleColor.Yellow;
+                    Console.WriteLine($"[{DateTime.Now:yyyy-MM-dd HH:mm:ss}] [Connection GoogleSheet Warning] Danh sách rỗng, không có bản ghi nào để thêm vào Google Sheet.");
+                    Console.ResetColor();
+                    return true;
+                }
+
+                //Convert list models to a list of values
+                var values = models.Select(model => new List<object> {
+                    model.IdDoiTac,
+                    model.IdCongTy,
+                    model.IdHeThong,
+                    model.ThoiDiemPhatSinhCuocDi,
+                    model.SdtKhachHang,
+                    model.TenKhachHang,
+                    model.QuangDuong,
+                    model.TienCuoc,
+                    model.HinhThucThanhToan,
+                    model.TrangThaiThanhToan,
+                    model.DienThoaiLaiXe,
+                    model.MaLaiXe,
+                    model.SoTai,
+                    model.BienSoXe,
+                    model.TrangThaiChuyenDi,
+                    model.DiemDon,
+                    model.DiemTra,
+                    model.DichVu,
+                    DateTime.Now.ToString("dd/MM/yyyy")
+                }).ToList<IList<object>>();
+
+                var valueRange = new ValueRange
+                {
+                    Values = values
+                };
+
+                string range = $"{sheetPartnerVNPay}!A2:S";
                 await sheetsService.ltvAppendSheetValuesAsync(SpreadSheetId, range, valueRange);
 
                 Console.ForegroundColor = ConsoleColor.Green;

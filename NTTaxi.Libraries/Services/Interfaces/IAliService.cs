@@ -20,6 +20,9 @@ namespace NTTaxi.Libraries.Services.Interfaces
         Task<List<PartnerGSM>> GetsPartnerGSMAli(DateTime start, DateTime end);
         Task PostPartnerGSMAli(DateTime start, DateTime end);
 
+        Task<List<PartnerVNPay>> GetsPartnerVNPayAli(DateTime start, DateTime end);
+        Task PostPartnerVNPayAli(DateTime start, DateTime end);
+
         Task<List<OnlineAppAli>> GetsOnlineAli(SchemaJson _json, DateTime start, DateTime end);
         Task PostOnlineAppAli(SchemaJson _json, DateTime start, DateTime end);
 

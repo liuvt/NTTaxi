@@ -23,7 +23,9 @@ namespace NTTaxi.Libraries.Services
         private readonly string endpoint_Promote = "transaction/money?";
         private readonly string endpoint_Switchboard = "request?";
         private readonly string endpoint_PartnerGSM = "widget-request/widget-request-gsm?";
+        private readonly string endpoint_PartnerVNPay = "widget-request/widget-request-vnpay-tch?";
         private readonly string endpoint_OnlineApp = "statistic/driver-onlinev2?";
+        
 
         private readonly Uri _baseUri = new Uri("https://adminphuquoc2.dieuhanhtaxi.vn/");
         private readonly IAliGgSheetServer aliGgSheetServer;
@@ -829,6 +831,105 @@ namespace NTTaxi.Libraries.Services
             query["to-date-request"] = endTime.ToString("dd-MM-yyyy HH:mm");
             query["status"] = "3";
             query["payment_status"] = "-1";
+            query["export_excel"] = "1";
+
+            return query.ToString();
+        }
+        #endregion
+
+        #region Partner VNPay Lấy tất cả nên không cần gọi từ khu vực
+        public async Task PostPartnerVNPayAli(DateTime start, DateTime end)
+        {
+            try
+            {
+                await aliGgSheetServer.ClearPartnerVNPayAliAsync(); //Xóa dữ liệu cũ
+                var partners = await GetsPartnerVNPayAli(start, end);
+                await aliGgSheetServer.AppendPartnerVNPayAliAsync(partners);
+            }
+            catch (Exception ex)
+            {
+                throw new Exception($"Lỗi khi lấy dữ liệu đơn hàng: {ex.Message}");
+            }
+        }
+        public async Task<List<PartnerVNPay>> GetsPartnerVNPayAli(DateTime start, DateTime end)
+        {
+            try
+            {
+                return await PartnerVNPayAli(start, end);
+            }
+            catch (Exception ex)
+            {
+                return new List<PartnerVNPay>();
+            }
+        }
+
+        private async Task<List<PartnerVNPay>> PartnerVNPayAli(DateTime start, DateTime end)
+        {
+            using var client = CreateHttpClient(JsonSerializer.Deserialize<SchemaJson>(await File.ReadAllTextAsync("AliAuthentication.json")));
+            var response = await client.GetAsync(_baseUri + endpoint_PartnerVNPay + PartnerVNPayQueryStringParameters(start, end));
+            //Console.WriteLine($"Data: {response}");
+            var partners = new List<PartnerVNPay>();
+
+            if (!response.IsSuccessStatusCode)
+                return partners;
+            var fileBytes = await response.Content.ReadAsByteArrayAsync();
+
+            using var ms = new MemoryStream(fileBytes);
+            using var workbook = new XLWorkbook(ms);
+            var ws = workbook.Worksheet(1);
+
+            //Ingore header row
+            foreach (var row in ws.RowsUsed().Skip(2))
+            {
+                //Check null or empty row
+                if (row.Cells().All(c => string.IsNullOrWhiteSpace(c.GetString())))
+                    break;
+
+                var partner = new PartnerVNPay
+                {
+                    IdDoiTac = row.Cell(2).GetString(), 
+                    IdCongTy = row.Cell(3).GetString(),  
+                    IdHeThong = row.Cell(4).GetString(),
+                    ThoiDiemPhatSinhCuocDi = row.Cell(5).GetString(),
+                    SdtKhachHang = row.Cell(6).GetString(),
+                    TenKhachHang = row.Cell(7).GetString(),
+                    QuangDuong = row.Cell(8).GetString().Replace(".", ","), // "12.5" -> 12,5
+                    TienCuoc = row.Cell(9).GetString().Replace(",", "."), // "1,200,000" -> 1200000
+                    HinhThucThanhToan = row.Cell(10).GetString(),
+                    TrangThaiThanhToan = row.Cell(11).GetString(),
+                    DienThoaiLaiXe = row.Cell(12).GetString(),
+                    MaLaiXe = row.Cell(13).GetString(),
+                    SoTai = row.Cell(14).GetString(),
+                    BienSoXe = row.Cell(15).GetString(),
+                    TrangThaiChuyenDi = row.Cell(16).GetString(),
+                    DiemDon = row.Cell(17).GetString(),
+                    DiemTra = row.Cell(18).GetString(),
+                    DichVu = row.Cell(19).GetString(),
+                };
+
+                partners.Add(partner);
+            }
+
+            return partners;
+        }
+
+        private string PartnerVNPayQueryStringParameters(DateTime startTime, DateTime endTime)
+        {
+            var query = HttpUtility.ParseQueryString(string.Empty);
+            query["partner_order_id"] = "";
+            query["widget_request_id"] = "";
+            query["request_id"] = "";
+            query["phone_client"] = "";
+            query["province_id"] = "0";
+            query["payment_status"] = "1";
+            query["from-date-request"] = startTime.ToString("dd-MM-yyyy HH:mm");
+            query["to-date-request"] = endTime.ToString("dd-MM-yyyy HH:mm");
+            query["status"] = "-3";
+            query["taxi_code"] = "";
+            query["content"] = "";
+            query["payment_method_id"] = "0";
+            query["phone_driver"] = "";
+            query["request_type_id"] = "0";
             query["export_excel"] = "1";
 
             return query.ToString();

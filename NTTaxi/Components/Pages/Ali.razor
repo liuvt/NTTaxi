@@ -285,12 +285,12 @@ else
                     password = schemaJson.User.password,
                 };
 
-                orders = await aliService.GetsOrderAli(schemaJson, startDate, endDate);
-                promotes = await aliService.GetsPromoteAli(schemaJson, startDate, endDate);
+                //orders = await aliService.GetsOrderAli(schemaJson, startDate, endDate);
+                //promotes = await aliService.GetsPromoteAli(schemaJson, startDate, endDate);
                 //cancelOrders = await aliService.GetsCancelOrderAli(startDate, endDate); //Hiển thị cho client
                 //switchBoards = await aliService.GetsSwitchboardAli(startDate, endDate);
                 //partnerGSMs = await aliService.GetsPartnerGSMAli(startDate, endDate);
-
+                await aliService.PostPartnerVNPayAli(startDate, endDate);
                 loaded_form = true;
             }
             else
@@ -342,6 +342,8 @@ else
 
             await aliService.PostPartnerGSMAli(startDate, endDate);
             //partnerGSMs = await aliService.GetsPartnerGSMAli(startDate, endDate);
+
+            await aliService.PostPartnerVNPayAli(startDate, endDate);
 
             await aliService.PostOnlineAppAli(schemaJson, startDate, endDate);
 

@@ -22,6 +22,10 @@ namespace NTTaxi.Libraries.GoogleSheetServers.Interfaces
         Task<bool> AppendPartnerGSMAliAsync(List<PartnerGSM> models);
         Task<bool> ClearPartnerGSMAliAsync();
 
+        //VNPay Partner
+        Task<bool> AppendPartnerVNPayAliAsync(List<PartnerVNPay> models);
+        Task<bool> ClearPartnerVNPayAliAsync();
+
         //Online App
         Task<bool> AppendOnlineAliAsync(List<OnlineAppAli> models);
         Task<bool> ClearOnlineAliAsync();

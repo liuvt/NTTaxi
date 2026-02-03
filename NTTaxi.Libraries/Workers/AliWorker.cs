@@ -39,15 +39,13 @@ namespace NTTaxi.Libraries.Workers
                 try
                 {
                     var now = DateTime.Now;
-                    // PostOrder (05:20)
-                    var orderTime = now.Date.AddHours(5).AddMinutes(10);
-                    var partnergsmTime = now.Date.AddHours(5).AddMinutes(15);
-                    var promoteTime = now.Date.AddHours(5).AddMinutes(25);
-                    var switchboardTime = now.Date.AddHours(5).AddMinutes(35);
-                    // PostCancelOrder (05:50)
-                    var cancelOrderTime = now.Date.AddHours(5).AddMinutes(45);
-                    var onlineApp = now.Date.AddHours(5).AddMinutes(55);
-
+                    var orderTime = now.Date.AddHours(5).AddMinutes(5);
+                    var partnergsmTime = now.Date.AddHours(5).AddMinutes(10);
+                    var partnervnpayTime = now.Date.AddHours(5).AddMinutes(15);
+                    var promoteTime = now.Date.AddHours(5).AddMinutes(20);
+                    var switchboardTime = now.Date.AddHours(5).AddMinutes(25);
+                    var cancelOrderTime = now.Date.AddHours(5).AddMinutes(30);
+                    var onlineApp = now.Date.AddHours(5).AddMinutes(35);
 
                     /*
                     var orderTime = now.AddSeconds(5);
@@ -55,12 +53,13 @@ namespace NTTaxi.Libraries.Workers
                     var cancelOrderTime = now.AddSeconds(5);*/
 
                     // Next day if time has passed
-                    if (now > cancelOrderTime)
+                    if (now > onlineApp)
                     {
                         orderTime = orderTime.AddDays(1);
-                        partnergsmTime = cancelOrderTime.AddDays(1);
+                        partnergsmTime = partnergsmTime.AddDays(1);
+                        partnervnpayTime = partnervnpayTime.AddDays(1);
                         promoteTime = promoteTime.AddDays(1);
-                        switchboardTime = cancelOrderTime.AddDays(1);
+                        switchboardTime = switchboardTime.AddDays(1);
                         cancelOrderTime = cancelOrderTime.AddDays(1);
                         onlineApp = onlineApp.AddDays(1);
                     }
@@ -86,6 +85,18 @@ namespace NTTaxi.Libraries.Workers
                     if (!token.IsCancellationRequested)
                     {
                         await _aliService.PostPartnerGSMAli(
+                            DateTime.Now.AddDays(-1).Date.AddHours(5),
+                            DateTime.Now.Date.AddHours(5));
+                    }
+
+                    // Waiting PostPartnerVNPay
+                    var delayToPartnertVnpay = partnervnpayTime - DateTime.Now;
+                    if (delayToPartnertVnpay > TimeSpan.Zero)
+                        await Task.Delay(delayToPartnertVnpay, token);
+
+                    if (!token.IsCancellationRequested)
+                    {
+                        await _aliService.PostPartnerVNPayAli(
                             DateTime.Now.AddDays(-1).Date.AddHours(5),
                             DateTime.Now.Date.AddHours(5));
                     }
