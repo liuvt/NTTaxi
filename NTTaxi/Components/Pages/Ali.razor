@@ -48,6 +48,10 @@ else
                         @onclick="(() => AppendGoogleSheetAsync())" disabled="@isGetsRecording">
                     @(isGetsRecording ? "Đang lấy dữ liệu..." : "Ghi dữ liệu")
                 </button><span class="text-teal-700">@saveGGSheet</span>
+                <button class="rounded-xl bg-green-500 px-2 py-1 text-sm text-white hover:bg-green-600 disabled:cursor-not-allowed disabled:bg-gray-500"
+                        @onclick="(() => TestGoogleAppen())" disabled="@isGetsRecording">
+                    @(isGetsRecording ? "Đang lấy dữ liệu..." : "Ghi dữ liệu test")
+                </button><span class="text-teal-700">@saveGGSheet</span>
             </div>
         </div>
 
@@ -285,7 +289,7 @@ else
                     password = schemaJson.User.password,
                 };
 
-                //orders = await aliService.GetsOrderAli(schemaJson, startDate, endDate);
+                orders = await aliService.GetsOrderAli(schemaJson, startDate, endDate);
                 //promotes = await aliService.GetsPromoteAli(schemaJson, startDate, endDate);
                 //cancelOrders = await aliService.GetsCancelOrderAli(startDate, endDate); //Hiển thị cho client
                 //switchBoards = await aliService.GetsSwitchboardAli(startDate, endDate);
@@ -320,6 +324,24 @@ else
         finally
         {
             isLoading = false; // Enable button sau khi xử lý xong
+        }
+    }
+
+    private async Task TestGoogleAppen()
+    {
+        try
+        {
+            isGetsRecording = true; // Disable button
+            await aliService.PostOrderAli(schemaJson, startDate, endDate);
+            //orders = await aliService.GetsOrderAli(schemaJson, startDate, endDate);
+        }
+        catch (Exception ex)
+        {
+            saveGGSheet = $"Lỗi: {ex.Message}";
+        }
+        finally
+        {
+            isGetsRecording = false; // Enable button sau khi xử lý xong
         }
     }
 
