@@ -48,10 +48,6 @@ else
                         @onclick="(() => AppendGoogleSheetAsync())" disabled="@isGetsRecording">
                     @(isGetsRecording ? "Đang lấy dữ liệu..." : "Ghi dữ liệu")
                 </button><span class="text-teal-700">@saveGGSheet</span>
-                <button class="rounded-xl bg-green-500 px-2 py-1 text-sm text-white hover:bg-green-600 disabled:cursor-not-allowed disabled:bg-gray-500"
-                        @onclick="(() => TestGoogleAppen())" disabled="@isGetsRecording">
-                    @(isGetsRecording ? "Đang lấy dữ liệu..." : "Ghi dữ liệu test")
-                </button><span class="text-teal-700">@saveGGSheet</span>
             </div>
         </div>
 
