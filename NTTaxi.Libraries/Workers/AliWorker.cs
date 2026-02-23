@@ -45,7 +45,7 @@ namespace NTTaxi.Libraries.Workers
                     var promoteTime = now.Date.AddHours(5).AddMinutes(20);
                     var switchboardTime = now.Date.AddHours(5).AddMinutes(25);
                     var cancelOrderTime = now.Date.AddHours(5).AddMinutes(30);
-                    var onlineApp = now.Date.AddHours(5).AddMinutes(35);
+                    var onlineApp = now.Date.AddHours(5).AddMinutes(40);
 
                     /*
                     var orderTime = now.AddSeconds(5);

@@ -1063,7 +1063,7 @@ namespace NTTaxi.Libraries.Services
                 ("CẦN THƠ", "5")
             };
 
-            var throttle = new SemaphoreSlim(3); // 2-3 là hợp lý
+            var throttle = new SemaphoreSlim(2); // 2-3 là hợp lý
             var tasks = provinces.Select(async p =>
             {
                 await throttle.WaitAsync();
@@ -1084,7 +1084,7 @@ namespace NTTaxi.Libraries.Services
 
         private async Task<List<OnlineAppAli>> OnlineAppAlisWithRetry(string provinceName, string code, DateTime start, DateTime end)
         {
-            var delayMs = 1500;
+            var delayMs = 3000;
 
             for (int attempt = 1; attempt <= 4; attempt++)
             {
