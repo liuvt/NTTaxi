@@ -951,12 +951,14 @@ namespace NTTaxi.Libraries.Services
                 {
                     OnlineAppAlisWithProvince("BẠC LIÊU", "64", start, end),
                     OnlineAppAlisWithProvince("VĨNH LONG", "61", start, end),
-                    OnlineAppAlisWithProvince("CÀ MAU", "63", start, end),
+                    /*
+                    OnlineAppAlisWithProvince("CÀ MAU", "63", start, end), 
                     OnlineAppAlisWithProvince("KIÊN GIANG", "15", start, end),
                     OnlineAppAlisWithProvince("HẬU GIANG", "62", start, end),
                     OnlineAppAlisWithProvince("AN GIANG", "16", start, end),
                     OnlineAppAlisWithProvince("SÓC TRĂNG", "20", start, end),
                     OnlineAppAlisWithProvince("CẦN THƠ", "5", start, end)
+                    */
                 };
 
                 var results = await Task.WhenAll(tasks);
@@ -1055,15 +1057,17 @@ namespace NTTaxi.Libraries.Services
             {
                 ("BẠC LIÊU", "64"),
                 ("VĨNH LONG", "61"),
+                /*
                 ("CÀ MAU", "63"),
                 ("KIÊN GIANG", "15"),
                 ("HẬU GIANG", "62"),
                 ("AN GIANG", "16"),
                 ("SÓC TRĂNG", "20"),
                 ("CẦN THƠ", "5")
+                */
             };
 
-            var throttle = new SemaphoreSlim(2); // 2-3 là hợp lý
+            var throttle = new SemaphoreSlim(1); // 2-3 là hợp lý
             var tasks = provinces.Select(async p =>
             {
                 await throttle.WaitAsync();

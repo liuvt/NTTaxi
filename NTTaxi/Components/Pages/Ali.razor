@@ -1,5 +1,4 @@
 ﻿@page "/ali"
-@using NTTaxi.Libraries.Models.Gsms
 
 @if (!loaded_form)
 {
@@ -46,7 +45,11 @@ else
                 </div>
                 <button class="rounded-xl bg-green-500 px-2 py-1 text-sm text-white hover:bg-green-600 disabled:cursor-not-allowed disabled:bg-gray-500"
                         @onclick="(() => AppendGoogleSheetAsync())" disabled="@isGetsRecording">
-                    @(isGetsRecording ? "Đang lấy dữ liệu..." : "Ghi dữ liệu")
+                    @(isGetsRecording ? "Đang lấy dữ liệu..." : "Lấy toàn bộ dữ liệu")
+                </button><span class="text-teal-700">@saveGGSheet</span>
+                <button class="rounded-xl bg-green-500 px-2 py-1 text-sm text-white hover:bg-green-600 disabled:cursor-not-allowed disabled:bg-gray-500"
+                        @onclick="(() => AppendOnlineAppAli())" disabled="@isGetsRecording">
+                    @(isGetsRecording ? "Đang lấy dữ liệu..." : "Online App")
                 </button><span class="text-teal-700">@saveGGSheet</span>
             </div>
         </div>
@@ -63,7 +66,7 @@ else
         {
             <div class="my-3">
                 Tổng cuốc: (5/@orders.Count)
-                <a href="https://docs.google.com/spreadsheets/d/1rMB8_QIkPG_rJWF_4sph9YPjTqNQ7XIWfzkGWzWVM1k/edit?gid=777025477#gid=777025477"
+                <a href="https://docs.google.com/spreadsheets/d/1LrZoup8C2JnOmCqB9pzjlU5nKDTy_qgLUEYlKO8moME/edit?gid=777025477#gid=777025477"
                    target="_blank" class="text-blue-500 underline hover:text-blue-700">
                     Chi tiết
                 </a>
@@ -100,7 +103,7 @@ else
         {
             <div class="my-3">
                 Tổng khuyến mãi: (5/@promotes.Count)
-                <a href="https://docs.google.com/spreadsheets/d/1rMB8_QIkPG_rJWF_4sph9YPjTqNQ7XIWfzkGWzWVM1k/edit?gid=2041033965#gid=2041033965"
+                <a href="https://docs.google.com/spreadsheets/d/1LrZoup8C2JnOmCqB9pzjlU5nKDTy_qgLUEYlKO8moME/edit?gid=2041033965#gid=2041033965"
                    target="_blank" class="text-blue-500 underline hover:text-blue-700">
                     Chi tiết
                 </a>
@@ -138,7 +141,7 @@ else
         {
             <div class="my-3">
                 Tổng cuốc hủy: (5/@cancelOrders.Count())
-                <a href="https://docs.google.com/spreadsheets/d/1rMB8_QIkPG_rJWF_4sph9YPjTqNQ7XIWfzkGWzWVM1k/edit?gid=1425231531#gid=1425231531"
+                <a href="https://docs.google.com/spreadsheets/d/1LrZoup8C2JnOmCqB9pzjlU5nKDTy_qgLUEYlKO8moME/edit?gid=1425231531#gid=1425231531"
                    target="_blank" class="text-blue-500 underline hover:text-blue-700">
                     Chi tiết
                 </a>
@@ -176,7 +179,7 @@ else
         {
             <div class="my-3">
                 Tổng cuốc tổng đài: (5/@switchBoards.Count())
-                <a href="https://docs.google.com/spreadsheets/d/1rMB8_QIkPG_rJWF_4sph9YPjTqNQ7XIWfzkGWzWVM1k/edit?gid=1491480516#gid=1491480516"
+                <a href="https://docs.google.com/spreadsheets/d/1LrZoup8C2JnOmCqB9pzjlU5nKDTy_qgLUEYlKO8moME/edit?gid=1491480516#gid=1491480516"
                    target="_blank" class="text-blue-500 underline hover:text-blue-700">
                     Chi tiết
                 </a>
@@ -214,7 +217,7 @@ else
         {
             <div class="my-3">
                 Tổng cuốc đối tác GSM: (5/@partnerGSMs.Count())
-                <a href="https://docs.google.com/spreadsheets/d/1rMB8_QIkPG_rJWF_4sph9YPjTqNQ7XIWfzkGWzWVM1k/edit?gid=521893464#gid=521893464"
+                <a href="https://docs.google.com/spreadsheets/d/1LrZoup8C2JnOmCqB9pzjlU5nKDTy_qgLUEYlKO8moME/edit?gid=521893464#gid=521893464"
                    target="_blank" class="text-blue-500 underline hover:text-blue-700">
                     Chi tiết
                 </a>
@@ -347,22 +350,41 @@ else
         {
             isGetsRecording = true; // Disable button
             await aliService.PostOrderAli(schemaJson, startDate, endDate); 
-            //orders = await aliService.GetsOrderAli(schemaJson, startDate, endDate); 
+            orders = await aliService.GetsOrderAli(schemaJson, startDate, endDate); // Hiển thị lên client
 
             await aliService.PostPromoteAli(schemaJson, startDate, endDate);
-            //promotes = await aliService.GetsPromoteAli(schemaJson, startDate, endDate);
+            promotes = await aliService.GetsPromoteAli(schemaJson, startDate, endDate); // Hiển thị lên client
 
             await aliService.PostCancelOrderAli(startDate, endDate);
-            //cancelOrders = await aliService.GetsCancelOrderAli( startDate, endDate); 
+            cancelOrders = await aliService.GetsCancelOrderAli(startDate, endDate);  // Hiển thị lên client
 
             await aliService.PostSwitchboardAli(startDate, endDate);
-            //switchBoards = await aliService.GetsSwitchboardAli(startDate, endDate);
+            switchBoards = await aliService.GetsSwitchboardAli(startDate, endDate); // Hiển thị lên client
 
             await aliService.PostPartnerGSMAli(startDate, endDate);
-            //partnerGSMs = await aliService.GetsPartnerGSMAli(startDate, endDate);
+            partnerGSMs = await aliService.GetsPartnerGSMAli(startDate, endDate); // Hiển thị lên client
 
             await aliService.PostPartnerVNPayAli(startDate, endDate);
 
+            await aliService.PostOnlineAppAli(schemaJson, startDate, endDate);
+
+            saveGGSheet = $"Ghi dữ liệu thành công";
+        }
+        catch (Exception ex)
+        {
+            saveGGSheet = $"Lỗi: {ex.Message}";
+        }
+        finally
+        {
+            isGetsRecording = false; // Enable button sau khi xử lý xong
+        }
+    }
+
+    private async Task AppendOnlineAppAli()
+    {
+        try
+        {
+            isGetsRecording = true; // Disable button
             await aliService.PostOnlineAppAli(schemaJson, startDate, endDate);
 
             saveGGSheet = $"Ghi dữ liệu thành công";
