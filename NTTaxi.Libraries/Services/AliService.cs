@@ -25,7 +25,7 @@ namespace NTTaxi.Libraries.Services
         private readonly string endpoint_PartnerGSM = "widget-request/widget-request-gsm?";
         private readonly string endpoint_PartnerVNPay = "widget-request/widget-request-vnpay-tch?";
         private readonly string endpoint_OnlineApp = "statistic/driver-onlinev2?";
-        
+
 
         private readonly Uri _baseUri = new Uri("https://adminphuquoc2.dieuhanhtaxi.vn/");
         private readonly IAliGgSheetServer aliGgSheetServer;
@@ -887,8 +887,8 @@ namespace NTTaxi.Libraries.Services
 
                 var partner = new PartnerVNPay
                 {
-                    IdDoiTac = row.Cell(2).GetString(), 
-                    IdCongTy = row.Cell(3).GetString(),  
+                    IdDoiTac = row.Cell(2).GetString(),
+                    IdCongTy = row.Cell(3).GetString(),
                     IdHeThong = row.Cell(4).GetString(),
                     ThoiDiemPhatSinhCuocDi = row.Cell(5).GetString(),
                     SdtKhachHang = row.Cell(6).GetString(),
@@ -980,6 +980,7 @@ namespace NTTaxi.Libraries.Services
                 await aliGgSheetServer.ClearOnlineAliAsync(); // Xóa dữ liệu cũ
                 //var data = await GetsOnlineAli(_json, start, end); // Lấy dữ liệu
                 var data = await GetsOnlineAliV2(_json, start, end); // Lấy dữ liệu
+                //var data = await GetsOnlineAliV3(_json, start, end); // Lấy dữ liệu
                 await aliGgSheetServer.AppendOnlineAliAsync(data); // Post lên Google Sheet
             }
             catch (Exception ex)
@@ -1057,17 +1058,15 @@ namespace NTTaxi.Libraries.Services
             {
                 ("BẠC LIÊU", "64"),
                 ("VĨNH LONG", "61"),
-                /*
                 ("CÀ MAU", "63"),
                 ("KIÊN GIANG", "15"),
                 ("HẬU GIANG", "62"),
                 ("AN GIANG", "16"),
                 ("SÓC TRĂNG", "20"),
                 ("CẦN THƠ", "5")
-                */
             };
 
-            var throttle = new SemaphoreSlim(1); // 2-3 là hợp lý
+            var throttle = new SemaphoreSlim(3); // 2-3 là hợp lý
             var tasks = provinces.Select(async p =>
             {
                 await throttle.WaitAsync();
@@ -1088,34 +1087,36 @@ namespace NTTaxi.Libraries.Services
 
         private async Task<List<OnlineAppAli>> OnlineAppAlisWithRetry(string provinceName, string code, DateTime start, DateTime end)
         {
-            var delayMs = 3000;
+            var delayMs = 1500;
 
-            for (int attempt = 1; attempt <= 4; attempt++)
+            for (int attempt = 1; attempt <= 5; attempt++)
             {
                 try
                 {
-                    using var cts = new CancellationTokenSource(TimeSpan.FromMinutes(4)); // tăng/giảm tùy thực tế
+                    // CancellationTokenSource để timeout nếu server không phản hồi, tránh treo ứng dụng. Nếu thỉnh thoảng server trả file rỗng do chưa kịp tạo thì sẽ retry lại
+                    using var cts = new CancellationTokenSource(TimeSpan.FromMinutes(5)); // tăng/giảm tùy thực tế
                     var data = await OnlineAppAlisV2(code, start, end, cts.Token);
 
                     // nếu thỉnh thoảng server trả file rỗng do chưa kịp tạo
-                    if (data.Count > 0 || attempt == 4)
+                    if (data.Count > 0 || attempt == 5)
                         return data;
 
                     throw new Exception("Excel empty");
                 }
-                catch (TaskCanceledException ex) when (attempt < 4)
+                catch (TaskCanceledException ex) when (attempt < 5)
                 {
                     logger.LogWarning(ex, $"OnlineApp timeout {provinceName}({code}) attempt {attempt}");
                 }
-                catch (HttpRequestException ex) when (attempt < 4)
+                catch (HttpRequestException ex) when (attempt < 5)
                 {
                     logger.LogWarning(ex, $"OnlineApp network error {provinceName}({code}) attempt {attempt}");
                 }
-                catch (Exception ex) when (attempt < 4)
+                catch (Exception ex) when (attempt < 5)
                 {
                     logger.LogWarning(ex, $"OnlineApp error {provinceName}({code}) attempt {attempt}");
                 }
 
+                // Thêm random delay để tránh retry đồng loạt nếu nhiều tỉnh cùng gặp lỗi
                 await Task.Delay(delayMs + Random.Shared.Next(0, 400));
                 delayMs *= 2; // backoff
             }
@@ -1139,6 +1140,7 @@ namespace NTTaxi.Libraries.Services
             if (mediaType.Contains("text/html", StringComparison.OrdinalIgnoreCase))
                 throw new Exception("Session expired / redirected to login (HTML returned)");
 
+            // Nếu server trả về file rỗng do chưa kịp tạo thì sẽ retry lại, nên không ném lỗi mà trả về list rỗng để vào retry
             await using var stream = await res.Content.ReadAsStreamAsync(ct);
             using var workbook = new XLWorkbook(stream);
             var ws = workbook.Worksheet(1);
@@ -1164,6 +1166,175 @@ namespace NTTaxi.Libraries.Services
             }
 
             return datas;
+        }
+
+
+        //V3
+        private sealed record OnlineAppFetchResult(List<OnlineAppAli> Data, long ByteLength);
+
+        public async Task<List<OnlineAppAli>> GetsOnlineAliV3(SchemaJson _json, DateTime start, DateTime end)
+        {
+            foreach (var ck in _json.CookieAli)
+                _cookieContainer.Add(_baseUri, new Cookie(ck.key, ck.value));
+
+            var provinces = new (string Name, string Code)[]
+            {
+                ("BẠC LIÊU", "64"),
+                ("VĨNH LONG", "61"),
+                ("CÀ MAU", "63"),
+                ("KIÊN GIANG", "15"),
+                ("HẬU GIANG", "62"),
+                ("AN GIANG", "16"),
+                ("SÓC TRĂNG", "20"),
+                ("CẦN THƠ", "5")
+            };
+
+            var throttle = new SemaphoreSlim(1); // 1 = an toàn nhất nếu server/session dễ lỗi
+            var tasks = provinces.Select(async p =>
+            {
+                await throttle.WaitAsync();
+                try
+                {
+                    var list = await OnlineAppAlisWithRetry3(p.Name, p.Code, start, end);
+                    return list;
+                }
+                finally
+                {
+                    throttle.Release();
+                }
+            });
+
+            var results = await Task.WhenAll(tasks);
+            return results.SelectMany(x => x).ToList();
+        }
+
+        private async Task<List<OnlineAppAli>> OnlineAppAlisWithRetry3(string provinceName, string code, DateTime start, DateTime end)
+        {
+            var delayMs = 1500;
+
+            // Dùng để kiểm tra "ổn định" (2 lần liên tiếp giống nhau)
+            int? lastCount = null;
+            long? lastBytes = null;
+            List<OnlineAppAli>? lastData = null;
+
+            for (int attempt = 1; attempt <= 5; attempt++)
+            {
+                try
+                {
+                    using var cts = new CancellationTokenSource(TimeSpan.FromMinutes(5));
+
+                    var result = await OnlineAppAlisV3(code, start, end, cts.Token);
+
+                    logger.LogInformation(
+                        "OnlineApp {Province}({Code}) attempt {Attempt}: rows={Rows}, bytes={Bytes}",
+                        provinceName, code, attempt, result.Data.Count, result.ByteLength);
+
+                    // File rỗng => retry
+                    if (result.Data.Count == 0)
+                        throw new Exception("Excel empty");
+
+                    // Nếu lần trước đã có data và lần này giống hệt (row count + bytes) => xem như ổn định, accept
+                    if (lastCount.HasValue && lastBytes.HasValue &&
+                        result.Data.Count == lastCount.Value &&
+                        result.ByteLength == lastBytes.Value)
+                    {
+                        return result.Data;
+                    }
+
+                    // Chưa ổn định: lưu lại và thử lại (trừ attempt cuối)
+                    lastCount = result.Data.Count;
+                    lastBytes = result.ByteLength;
+                    lastData = result.Data;
+
+                    if (attempt == 5)
+                        return result.Data;
+
+                    throw new Exception($"Excel may still be generating (rows={result.Data.Count}, bytes={result.ByteLength})");
+                }
+                catch (TaskCanceledException ex) when (attempt < 5)
+                {
+                    logger.LogWarning(ex, "OnlineApp timeout {Province}({Code}) attempt {Attempt}", provinceName, code, attempt);
+                }
+                catch (HttpRequestException ex) when (attempt < 5)
+                {
+                    logger.LogWarning(ex, "OnlineApp network error {Province}({Code}) attempt {Attempt}", provinceName, code, attempt);
+                }
+                catch (Exception ex) when (attempt < 5)
+                {
+                    logger.LogWarning(ex, "OnlineApp error {Province}({Code}) attempt {Attempt}", provinceName, code, attempt);
+                }
+
+                await Task.Delay(delayMs + Random.Shared.Next(0, 400));
+                delayMs *= 2; // exponential backoff
+            }
+
+            logger.LogError("OnlineApp FAILED {Province}({Code}) after retries", provinceName, code);
+
+            // Nếu đã từng có data nhưng chưa kịp ổn định, trả fallback để không mất trắng
+            return lastData ?? new List<OnlineAppAli>();
+        }
+
+        private async Task<OnlineAppFetchResult> OnlineAppAlisV3(string province, DateTime start, DateTime end, CancellationToken ct)
+        {
+            var url = $"{_baseUri}{endpoint_OnlineApp}{OnlineAppQueryStringParameters(province, start, end)}";
+
+            using var req = new HttpRequestMessage(HttpMethod.Get, url);
+
+            // Đổi sang ResponseContentRead để ưu tiên tải full body trước (ổn định hơn trong case file export)
+            using var res = await _client.SendAsync(req, HttpCompletionOption.ResponseContentRead, ct);
+
+            if (!res.IsSuccessStatusCode)
+                return new OnlineAppFetchResult(new List<OnlineAppAli>(), 0);
+
+            var mediaType = res.Content.Headers.ContentType?.MediaType ?? "";
+            if (mediaType.Contains("text/html", StringComparison.OrdinalIgnoreCase))
+                throw new Exception("Session expired / redirected to login (HTML returned)");
+
+            // Tải toàn bộ file vào memory trước rồi mới parse
+            var bytes = await res.Content.ReadAsByteArrayAsync(ct);
+
+            // Heuristic: file quá nhỏ thường là lỗi/partial/response không hợp lệ
+            if (bytes == null || bytes.Length < 1024)
+                return new OnlineAppFetchResult(new List<OnlineAppAli>(), bytes?.LongLength ?? 0);
+
+            // XLSX là zip => 2 byte đầu thường là 'P' 'K'
+            if (bytes.Length >= 2 && !(bytes[0] == (byte)'P' && bytes[1] == (byte)'K'))
+                throw new Exception($"Invalid xlsx signature. bytes={bytes.Length}, content-type={mediaType}");
+
+            var datas = new List<OnlineAppAli>();
+
+            try
+            {
+                using var ms = new MemoryStream(bytes, writable: false);
+                using var workbook = new XLWorkbook(ms);
+                var ws = workbook.Worksheet(1);
+
+                foreach (var row in ws.RowsUsed().Skip(3))
+                {
+                    // bỏ dòng trống, không break để tránh mất dữ liệu phía sau
+                    if (row.CellsUsed().All(c => string.IsNullOrWhiteSpace(c.GetString())))
+                        continue;
+
+                    datas.Add(new OnlineAppAli
+                    {
+                        ID = row.Cell(2).GetString(),
+                        DriverName = row.Cell(3).GetString(),
+                        DriverPhoneNumber = row.Cell(4).GetString(),
+                        DriveNo = row.Cell(5).GetString(),
+                        DrivePlate = row.Cell(6).GetString(),
+                        Team = row.Cell(7).GetString(),
+                        OnlineTime = row.Cell(8).GetString()
+                    });
+                }
+            }
+            catch (Exception ex)
+            {
+                // Parse lỗi thường do file chưa hoàn chỉnh / corrupted tạm thời
+                logger.LogWarning(ex, "Parse xlsx failed for province={Province}, bytes={Bytes}", province, bytes.LongLength);
+                throw;
+            }
+
+            return new OnlineAppFetchResult(datas, bytes.LongLength);
         }
         #endregion
 
