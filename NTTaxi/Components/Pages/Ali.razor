@@ -50,7 +50,7 @@ else
                 <button class="rounded-xl bg-green-500 px-2 py-1 text-sm text-white hover:bg-green-600 disabled:cursor-not-allowed disabled:bg-gray-500"
                         @onclick="(() => AppendOnlineAppAli())" disabled="@isGetsRecording">
                     @(isGetsRecording ? "Đang lấy dữ liệu..." : "Online App")
-                </button><span class="text-teal-700">@saveGGSheet</span>
+                </button><span class="text-teal-700">@saveOnlineGGSheet</span>
             </div>
         </div>
 
@@ -261,8 +261,10 @@ else
     private bool isLoading = false;
     private bool isGetsRecording = false;
     private string authenStatus = "";
-    private string loadedForm_string = "Đang tải...";
+    private string loadedForm_string = "Thinking...";
     private string saveGGSheet = "";
+    private string saveOnlineGGSheet { get; set; } = string.Empty;
+    
 
     private DateTime startDate { get; set; } = DateTime.Now.AddDays(-1).Date.AddHours(5);
     private DateTime endDate { get; set; } = DateTime.Now.Date.AddHours(5);
@@ -326,24 +328,6 @@ else
         }
     }
 
-    private async Task TestGoogleAppen()
-    {
-        try
-        {
-            isGetsRecording = true; // Disable button
-            await aliService.PostOrderAli(schemaJson, startDate, endDate);
-            //orders = await aliService.GetsOrderAli(schemaJson, startDate, endDate);
-        }
-        catch (Exception ex)
-        {
-            saveGGSheet = $"Lỗi: {ex.Message}";
-        }
-        finally
-        {
-            isGetsRecording = false; // Enable button sau khi xử lý xong
-        }
-    }
-
     private async Task AppendGoogleSheetAsync()
     {
         try
@@ -387,11 +371,11 @@ else
             isGetsRecording = true; // Disable button
             await aliService.PostOnlineAppAli(schemaJson, startDate, endDate);
 
-            saveGGSheet = $"Ghi dữ liệu thành công";
+            saveOnlineGGSheet = $"Ghi dữ liệu thành công";
         }
         catch (Exception ex)
         {
-            saveGGSheet = $"Lỗi: {ex.Message}";
+            saveOnlineGGSheet = $"Lỗi: {ex.Message}";
         }
         finally
         {
