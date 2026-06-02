@@ -336,7 +336,7 @@ else
 
             await aliService.PostPromoteAli(schemaJson, startDate, endDate);
             promotes = await aliService.GetsPromoteAli(schemaJson, startDate, endDate); // Hiển thị lên client
-
+            
             await aliService.PostCancelOrderAli(startDate, endDate);
             cancelOrders = await aliService.GetsCancelOrderAli(startDate, endDate);  // Hiển thị lên client
 
@@ -349,7 +349,7 @@ else
             await aliService.PostPartnerVNPayAli(startDate, endDate);
 
             await aliService.PostOnlineAppAli(schemaJson, startDate, endDate);
-
+            
             saveGGSheet = $"Ghi dữ liệu thành công";
         }
         catch (Exception ex)

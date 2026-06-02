@@ -957,7 +957,6 @@ namespace NTTaxi.Libraries.Services
                     OnlineAppAlisWithProvince("SÓC TRĂNG", "20", start, end),
                     OnlineAppAlisWithProvince("CẦN THƠ", "5", start, end),
                     OnlineAppAlisWithProvince("PHÚ QUỐC", "11", start, end)
-
                 };
 
                 var results = await Task.WhenAll(tasks);
@@ -1062,7 +1061,8 @@ namespace NTTaxi.Libraries.Services
                 ("HẬU GIANG", "62"),
                 ("AN GIANG", "16"),
                 ("SÓC TRĂNG", "20"),
-                ("CẦN THƠ", "5")
+                ("CẦN THƠ", "5"),
+                ("PHÚ QUỐC", "11")
             };
 
             var throttle = new SemaphoreSlim(3); // 2-3 là hợp lý
@@ -1186,7 +1186,8 @@ namespace NTTaxi.Libraries.Services
                 ("HẬU GIANG", "62"),
                 ("AN GIANG", "16"),
                 ("SÓC TRĂNG", "20"),
-                ("CẦN THƠ", "5")
+                ("CẦN THƠ", "5"),
+                ("PHÚ QUỐC", "11")
             };
 
             var throttle = new SemaphoreSlim(1); // 1 = an toàn nhất nếu server/session dễ lỗi
