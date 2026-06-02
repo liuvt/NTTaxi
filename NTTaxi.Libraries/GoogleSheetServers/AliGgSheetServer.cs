@@ -1,4 +1,5 @@
-﻿using Google.Apis.Auth.OAuth2;
+﻿using DocumentFormat.OpenXml.Office2010.Excel;
+using Google.Apis.Auth.OAuth2;
 using Google.Apis.Services;
 using Google.Apis.Sheets.v4;
 using Google.Apis.Sheets.v4.Data;
@@ -23,12 +24,12 @@ namespace NTTaxi.Libraries.GoogleSheetServers
 
         // For Sheet
         private readonly string sheetAPPKH = "APP KHÁCH HÀNG";
-        private readonly string sheetKM = "KHUYẾN MÃI"; 
+        private readonly string sheetKM = "KHUYẾN MÃI";
         private readonly string sheetCancel = "HỦY CUỐC TỔNG ĐÀI/APP";
         private readonly string sheetSwitchboard = "KIẾM SOÁT DỊCH VỤ HOÀN THÀNH";
         private readonly string sheetPartnerGSM = "ĐÔI TÁC GSM TRÊN ALI";
         private readonly string sheetPartnerVNPay = "ĐÔI TÁC VNPAY TRÊN ALI";
-        
+
         private readonly string sheetOnlineApp = "ONLINE APP";
 
 
@@ -58,7 +59,7 @@ namespace NTTaxi.Libraries.GoogleSheetServers
             try
             {
                 //Convert list models to a list of values
-                var values = models.Select(model => new List<object> { 
+                var values = models.Select(model => new List<object> {
                     model.ID,
                     model.CustomerPhoneNumber,
                     model.CustomerFullName,
@@ -131,14 +132,12 @@ namespace NTTaxi.Libraries.GoogleSheetServers
                     model.ID,
                     model.PartnerCode,
                     model.DriverPhoneNumber,
-                    model.Price,
+                    model.PriceTrip,
                     model.PromotionPrice,
+                    model.VoucherPrice,
                     model.ReturnDiscount,
-                    model.CustomerPay,
                     model.ExtraFee,
-                    model.Discount,
-                    model.Revenue,
-                    model.DepositRemaining,
+                    model.CustomerPay,
                     model.PaymentMethod,
                     model.CreatedAt,
                     DateTime.Now.ToString("dd/MM/yyyy")
@@ -434,7 +433,7 @@ namespace NTTaxi.Libraries.GoogleSheetServers
         {
             try
             {
-                if(models == null || models.Count == 0)
+                if (models == null || models.Count == 0)
                 {
                     Console.ForegroundColor = ConsoleColor.Yellow;
                     Console.WriteLine($"[{DateTime.Now:yyyy-MM-dd HH:mm:ss}] [Connection GoogleSheet Warning] Danh sách rỗng, không có bản ghi nào để thêm vào Google Sheet.");
@@ -507,7 +506,7 @@ namespace NTTaxi.Libraries.GoogleSheetServers
                     DateTime.Now.ToString("dd/MM/yyyy")
                 }).ToList<IList<object>>();
 
-        var valueRange = new ValueRange
+                var valueRange = new ValueRange
                 {
                     Values = values
                 };

@@ -1,0 +1,157 @@
+﻿@page "/camera"
+
+@if (!loaded_form)
+{
+    <div class="flex min-h-screen items-center justify-center text-sm text-teal-700">
+        @loadedForm_string
+    </div>
+}
+else
+{
+    <div class="mt-2 w-full">
+        <div class="mt-2">
+            <div class="flex bg-gray-900 p-2 text-gray-100">
+                <div class="mb-4 text-2xl font-bold text-green-400">CAMERA Control Panel</div>
+            </div>
+        </div>
+
+        <div class="flex flex-wrap items-center gap-4 bg-gray-900 p-4 text-gray-100">
+            <div>
+                <label class="px-2">Tài khoản:</label>
+                <input class="rounded border border-gray-600 bg-gray-800 px-2 py-1 text-gray-100"
+                       @bind="user.Username" />
+            </div>
+
+            <div>
+                <label class="px-2">Mật khẩu:</label>
+                <input type="password"
+                       class="rounded border border-gray-600 bg-gray-800 px-2 py-1 text-gray-100"
+                       @bind="user.Password" />
+            </div>
+
+            <button class="rounded-xl bg-green-500 px-2 py-1 text-sm text-white hover:bg-green-600 disabled:cursor-not-allowed disabled:bg-gray-500"
+                    @onclick="Login"
+                    disabled="@isLoading">
+                @(isLoading ? "Đang đăng nhập..." : "Đăng nhập")
+            </button>
+
+            <span class="text-teal-400">@authenStatus</span>
+        </div>
+
+        <div class="mt-2">
+            <div class="flex flex-wrap items-center gap-4 bg-gray-900 p-4 break-all text-gray-100">
+                TOKEN: @result
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    [Inject] private ICameraService cameraService { get; set; } = default!;
+
+    private bool isLoading = false;
+    private bool loaded_form = false;
+    private string loadedForm_string = "Thinking...";
+    private string authenStatus = "";
+    private string result = "";
+
+    private CameraLoginRequest user { get; set; } = new();
+    private CameraAuthenticationFile _cameraAuthenticationFile { get; set; } = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            var filePath = Path.Combine(AppContext.BaseDirectory, "CameraAuthentication.json");
+
+            if (File.Exists(filePath))
+            {
+                var json = await File.ReadAllTextAsync(filePath);
+                _cameraAuthenticationFile = JsonSerializer.Deserialize<CameraAuthenticationFile>(json) ?? new CameraAuthenticationFile();
+
+                if (_cameraAuthenticationFile.User != null)
+                {
+                    user = new CameraLoginRequest
+                    {
+                        Username = _cameraAuthenticationFile.User.Username,
+                        Password = _cameraAuthenticationFile.User.Password,
+                        DeviceToken = string.IsNullOrWhiteSpace(_cameraAuthenticationFile.User.DeviceToken)
+                            ? "false"
+                            : _cameraAuthenticationFile.User.DeviceToken
+                    };
+                }
+
+                if (_cameraAuthenticationFile.Token != null)
+                {
+                    result = _cameraAuthenticationFile.Token.Token;
+                }
+
+                // Tự động đăng nhập nếu file có sẵn user
+                if (!string.IsNullOrWhiteSpace(user.Username) &&
+                    !string.IsNullOrWhiteSpace(user.Password))
+                {
+                    await Login();
+                }
+            }
+            else
+            {
+                authenStatus = "Không tìm thấy file CameraAuthentication.json. Bạn hãy nhập tài khoản để đăng nhập.";
+            }
+        }
+        catch (Exception ex)
+        {
+            authenStatus = $"Lỗi đọc file cấu hình: {ex.Message}";
+        }
+        finally
+        {
+            loaded_form = true;
+        }
+    }
+
+    private async Task Login()
+    {
+        try
+        {
+            isLoading = true;
+            authenStatus = "Đang đăng nhập...";
+
+            // Luôn dùng dữ liệu từ form
+            var request = new CameraLoginRequest
+            {
+                Username = user.Username?.Trim() ?? "",
+                Password = user.Password ?? "",
+                DeviceToken = string.IsNullOrWhiteSpace(user.DeviceToken) ? "false" : user.DeviceToken
+            };
+
+            var success = await cameraService.GetAuthenticationAsync(request);
+
+            if (success)
+            {
+                authenStatus = "Đăng nhập thành công, đã ghi nhớ tài khoản!";
+
+                var filePath = Path.Combine(AppContext.BaseDirectory, "CameraAuthentication.json");
+                if (File.Exists(filePath))
+                {
+                    var json = await File.ReadAllTextAsync(filePath);
+                    _cameraAuthenticationFile = JsonSerializer.Deserialize<CameraAuthenticationFile>(json) ?? new CameraAuthenticationFile();
+                    result = _cameraAuthenticationFile.Token?.Token ?? "";
+                }
+            }
+            else
+            {
+                authenStatus = "Tài khoản đăng nhập không đúng, vui lòng nhập lại!";
+                result = "";
+            }
+        }
+        catch (Exception ex)
+        {
+            authenStatus = $"Đăng nhập thất bại: {ex.Message}";
+            result = "";
+            Console.WriteLine(ex);
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+}

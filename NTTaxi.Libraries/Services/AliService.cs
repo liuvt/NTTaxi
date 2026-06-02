@@ -1,12 +1,8 @@
 ﻿using ClosedXML.Excel;
-using DocumentFormat.OpenXml.EMMA;
-using DocumentFormat.OpenXml.Wordprocessing;
 using Microsoft.Extensions.Logging;
 using NTTaxi.Libraries.GoogleSheetServers.Interfaces;
 using NTTaxi.Libraries.Models.Alis;
-using NTTaxi.Libraries.Models.Gsms;
 using NTTaxi.Libraries.Services.Interfaces;
-using System.Collections.Generic;
 using System.Net;
 using System.Text;
 using System.Text.Json;
@@ -121,7 +117,8 @@ namespace NTTaxi.Libraries.Services
                     OrderAlisWithProvince("HẬU GIANG", "62", start, end),
                     OrderAlisWithProvince("AN GIANG", "16", start, end),
                     OrderAlisWithProvince("SÓC TRĂNG", "20", start, end),
-                    OrderAlisWithProvince("CẦN THƠ", "5", start, end)
+                    OrderAlisWithProvince("CẦN THƠ", "5", start, end),
+                    OrderAlisWithProvince("PHÚ QUỐC", "11", start, end)
                 };
 
                 var results = await Task.WhenAll(tasks);
@@ -243,7 +240,8 @@ namespace NTTaxi.Libraries.Services
                     PromoteAlisWithProvince("HẬU GIANG", "62", start, end),
                     PromoteAlisWithProvince("AN GIANG", "16", start, end),
                     PromoteAlisWithProvince("SÓC TRĂNG", "20", start, end),
-                    PromoteAlisWithProvince("CẦN THƠ", "5", start, end)
+                    PromoteAlisWithProvince("CẦN THƠ", "5", start, end),
+                    PromoteAlisWithProvince("PHÚ QUỐC", "11", start, end)
                 };
 
                 var results = await Task.WhenAll(tasks);
@@ -304,16 +302,14 @@ namespace NTTaxi.Libraries.Services
                     ID = row.Cell(2).GetString(),
                     PartnerCode = row.Cell(3).GetString(),
                     DriverPhoneNumber = row.Cell(4).GetString(),
-                    Price = row.Cell(5).GetString(),
-                    PromotionPrice = row.Cell(6).GetString(),
-                    ReturnDiscount = row.Cell(7).GetString(),
-                    CustomerPay = row.Cell(8).GetString(),
+                    PriceTrip = row.Cell(5).GetString(),
+                    PromotionPrice= row.Cell(6).GetString(),
+                    VoucherPrice = row.Cell(7).GetString(),
+                    ReturnDiscount = row.Cell(8).GetString(),
                     ExtraFee = row.Cell(9).GetString(),
-                    Discount = row.Cell(10).GetString(),
-                    Revenue = row.Cell(11).GetString(),
-                    DepositRemaining = row.Cell(12).GetString(),
-                    PaymentMethod = row.Cell(13).GetString(),
-                    CreatedAt = row.Cell(14).GetString()
+                    CustomerPay = row.Cell(10).GetString(),
+                    PaymentMethod= row.Cell(11).GetString(),
+                    CreatedAt = row.Cell(12).GetString(),
                 };
                 promotes.Add(promote);
             }
@@ -390,7 +386,8 @@ namespace NTTaxi.Libraries.Services
                     ("HẬU GIANG", "62"),
                     ("AN GIANG", "16"),
                     ("SÓC TRĂNG", "20"),
-                    ("CẦN THƠ", "5")
+                    ("CẦN THƠ", "5"),
+                    ("PHÚ QUỐC", "11")
                 };
 
                 foreach (var (name, code) in provinces)
@@ -504,7 +501,8 @@ namespace NTTaxi.Libraries.Services
                     ("HẬU GIANG", "62"),
                     ("AN GIANG", "16"),
                     ("SÓC TRĂNG", "20"),
-                    ("CẦN THƠ", "5")
+                    ("CẦN THƠ", "5"),
+                    ("PHÚ QUỐC", "11")
                 };
 
                 foreach (var (name, code) in provinces)
@@ -650,7 +648,8 @@ namespace NTTaxi.Libraries.Services
                     ("HẬU GIANG", "62"),
                     ("AN GIANG", "16"),
                     ("SÓC TRĂNG", "20"),
-                    ("CẦN THƠ", "5")
+                    ("CẦN THƠ", "5"),
+                    ("PHÚ QUỐC", "11")
                 };
 
                 foreach (var (name, code) in provinces)
@@ -951,14 +950,14 @@ namespace NTTaxi.Libraries.Services
                 {
                     OnlineAppAlisWithProvince("BẠC LIÊU", "64", start, end),
                     OnlineAppAlisWithProvince("VĨNH LONG", "61", start, end),
-                    /*
                     OnlineAppAlisWithProvince("CÀ MAU", "63", start, end), 
                     OnlineAppAlisWithProvince("KIÊN GIANG", "15", start, end),
                     OnlineAppAlisWithProvince("HẬU GIANG", "62", start, end),
                     OnlineAppAlisWithProvince("AN GIANG", "16", start, end),
                     OnlineAppAlisWithProvince("SÓC TRĂNG", "20", start, end),
-                    OnlineAppAlisWithProvince("CẦN THƠ", "5", start, end)
-                    */
+                    OnlineAppAlisWithProvince("CẦN THƠ", "5", start, end),
+                    OnlineAppAlisWithProvince("PHÚ QUỐC", "11", start, end)
+
                 };
 
                 var results = await Task.WhenAll(tasks);
@@ -979,8 +978,8 @@ namespace NTTaxi.Libraries.Services
             {
                 await aliGgSheetServer.ClearOnlineAliAsync(); // Xóa dữ liệu cũ
                 //var data = await GetsOnlineAli(_json, start, end); // Lấy dữ liệu
-                var data = await GetsOnlineAliV2(_json, start, end); // Lấy dữ liệu
-                //var data = await GetsOnlineAliV3(_json, start, end); // Lấy dữ liệu
+                //var data = await GetsOnlineAliV2(_json, start, end); // Lấy dữ liệu
+                var data = await GetsOnlineAliV3(_json, start, end); // Lấy dữ liệu
                 await aliGgSheetServer.AppendOnlineAliAsync(data); // Post lên Google Sheet
             }
             catch (Exception ex)
@@ -1164,6 +1163,7 @@ namespace NTTaxi.Libraries.Services
                     OnlineTime = row.Cell(8).GetString()
                 });
             }
+            var dt = datas;
 
             return datas;
         }
